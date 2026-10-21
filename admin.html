@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor panel — SDF 1 | Baku Engineering University</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+    <script src="env.js"></script>
+    <script src="sha256.js"></script>
+    <style>
+        :root {
+            --navy: #14305a;
+            --navy-dark: #0e2343;
+            --gold: #a8873a;
+            --bg: #f2f3f5;
+            --paper: #ffffff;
+            --text: #1b1f24;
+            --muted: #5a6370;
+            --border: #c8cdd4;
+            --border-light: #e1e4e8;
+            --success: #1d6b3a;
+            --danger: #9b1c1c;
+            --warning: #8a5a00;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans', 'Segoe UI', Arial, sans-serif; font-size: 14.5px; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+        h1, h2, h3, h4 { font-family: 'Noto Serif', Georgia, serif; color: var(--navy-dark); }
+
+        .uni-header { background: var(--navy); color: #fff; border-bottom: 3px solid var(--gold); }
+        .uni-header-inner { max-width: 1200px; margin: 0 auto; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .uni-name { font-family: 'Noto Serif', Georgia, serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; }
+        .uni-sub { font-size: 12.5px; opacity: 0.85; margin-top: 2px; }
+        .uni-course { font-size: 13px; text-align: right; opacity: 0.95; line-height: 1.4; }
+
+        .container { max-width: 1200px; width: 100%; margin: 22px auto; padding: 0 20px; flex: 1; }
+
+        .panel { background: var(--paper); border: 1px solid var(--border); border-radius: 2px; margin-bottom: 18px; }
+        .panel-head { border-bottom: 1px solid var(--border-light); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .panel-head h2 { font-size: 18px; }
+        .panel-body { padding: 16px 18px; }
+        .subtitle { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn { font: inherit; font-weight: 600; font-size: 13.5px; padding: 8px 16px; border-radius: 2px; border: 1px solid var(--navy); background: var(--navy); color: #fff; cursor: pointer; }
+        .btn:hover { background: var(--navy-dark); }
+        .btn-outline { background: #fff; color: var(--navy); }
+        .btn-outline:hover { background: #eef1f6; }
+        .btn-sm { padding: 4px 10px; font-size: 12.5px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border: 1px solid var(--border); background: var(--paper); margin-bottom: 18px; }
+        .stat-card { padding: 12px 16px; border-right: 1px solid var(--border-light); }
+        .stat-card:last-child { border-right: none; }
+        .stat-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+        .stat-val { font-size: 22px; font-weight: 700; }
+
+        .table-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f4f5f7; padding: 9px 12px; text-align: left; font-weight: 600; font-size: 12.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        td { padding: 9px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        tbody tr:hover { background: #f8f9fb; }
+
+        .badge-status { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+        .status-ok { color: var(--success); border-color: #a9cdb5; background: #eef6f0; }
+        .status-danger { color: var(--danger); border-color: #e2b4b4; background: #fbefef; }
+        .status-warning { color: var(--warning); border-color: #e3cf9f; background: #fbf5e6; }
+
+        .notice { padding: 10px 14px; font-size: 13.5px; margin-bottom: 16px; line-height: 1.5; display: none; border: 1px solid; border-left-width: 4px; }
+        .notice.warn { display: block; background: #fbf5e6; border-color: #e3cf9f; color: #5c3d00; }
+        .notice.err { display: block; background: #fbefef; border-color: #e2b4b4; color: var(--danger); }
+        .flag { color: var(--warning); font-weight: 600; font-size: 12px; }
+        .mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+        .muted { color: var(--muted); }
+
+        .modal { position: fixed; inset: 0; background: rgba(14, 35, 67, 0.6); display: none; justify-content: center; align-items: center; z-index: 100; padding: 16px; }
+        .modal-content { background: var(--paper); border-top: 4px solid var(--navy); max-width: 720px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px 24px; }
+        .modal-content h3 { font-size: 18px; }
+        .modal-content h4 { font-size: 15px; margin: 14px 0 8px; }
+        .modal-content p { margin-bottom: 4px; }
+        .grid-scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 4px; margin-bottom: 8px; }
+        .grid-scores div { padding: 4px 8px; font-size: 13px; border: 1px solid var(--border-light); }
+        .grid-scores .full { background: #eef6f0; }
+        .grid-scores .zero { background: #fbefef; }
+        .answer-pre { background: #f6f7f9; border: 1px solid var(--border-light); padding: 6px 10px; margin-top: 2px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .log-list { padding-left: 18px; margin-bottom: 8px; font-size: 13.5px; }
+
+        .login-box { max-width: 420px; margin: 60px auto; }
+        .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 5px; }
+        .field input { width: 100%; padding: 9px 11px; font: inherit; border: 1px solid var(--border); border-radius: 2px; }
+        .field input:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+
+        tr.annulled td { color: var(--muted); text-decoration: line-through; }
+        tr.annulled td:last-child, tr.annulled td:nth-last-child(2) { text-decoration: none; }
+        .status-muted { color: var(--muted); border-color: var(--border); background: #f4f5f7; }
+        .modal-actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .btn-danger { background: var(--danger); border-color: var(--danger); }
+        .btn-danger:hover { background: #7f1616; }
+        .seat.live { border-left-color: var(--navy); background: #eef2f8; cursor: pointer; }
+        .seat.live.stale { border-left-color: var(--warning); }
+        .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 5px; vertical-align: 1px; }
+        .live-dot.off { background: var(--warning); }
+        .live-head { display: flex; align-items: center; gap: 8px; }
+        .rt-status { font-size: 12.5px; color: var(--muted); }
+        .rt-status b { color: var(--success); }
+        .test-ok { color: var(--success); font-weight: 600; }
+        .test-bad { color: var(--danger); font-weight: 600; }
+        .roster { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; }
+        .roster-col h4 { font-family: 'Noto Sans', sans-serif; font-size: 12.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+        .seat { border: 1px solid var(--border-light); border-left-width: 4px; padding: 6px 9px; margin-bottom: 6px; font-size: 13px; min-height: 52px; cursor: default; }
+        .seat .no { font-weight: 700; color: var(--navy); }
+        .seat .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .seat.empty { border-style: dashed; border-left-style: solid; border-left-color: var(--border); color: var(--muted); background: #fafbfc; }
+        .seat.done { border-left-color: var(--success); background: #f6fbf7; cursor: pointer; }
+        .seat.out { border-left-color: var(--danger); background: #fdf6f6; cursor: pointer; }
+        .seat.late { border-left-color: var(--warning); background: #fdfaf2; cursor: pointer; }
+        .seat.dup { outline: 2px solid var(--warning); }
+        .roster-summary { font-size: 13.5px; margin-bottom: 12px; line-height: 1.6; }
+        @media (max-width: 800px) { .roster { grid-template-columns: repeat(2, 1fr); } }
+        .uni-footer { text-align: center; font-size: 12px; color: var(--muted); padding: 18px 16px 24px; }
+
+        @media (max-width: 700px) { .uni-course { text-align: left; } }
+    </style>
+</head>
+<body>
+
+    <header class="uni-header">
+        <div class="uni-header-inner">
+            <div>
+                <div class="uni-name">BAKU ENGINEERING UNIVERSITY</div>
+                <div class="uni-sub">Faculty of Information and Computer Technologies · Computer Engineering</div>
+            </div>
+            <div class="uni-course">Programming Fundamentals — 1st year, group 1248 — SDF 1<br>Exam supervisor panel</div>
+        </div>
+    </header>
+
+    <!-- LOGIN -->
+    <main id="auth-gate" class="container">
+        <div class="panel login-box">
+            <div class="panel-head"><h2>Exam supervisor login</h2></div>
+            <div class="panel-body">
+                <form onsubmit="handleAdminLogin(event)">
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label for="admin-pass-input">Password</label>
+                        <input type="password" id="admin-pass-input" autofocus required autocomplete="current-password">
+                    </div>
+                    <div id="auth-error-msg" style="display: none; color: var(--danger); font-size: 13px; font-weight: 600; margin-bottom: 12px;"></div>
+                    <button type="submit" class="btn" style="width: 100%; padding: 10px;">Log in</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- RESULTS (only after the password) -->
+    <main id="admin-dashboard" class="container" style="display: none;">
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Exam results</h2>
+                    <div class="subtitle"><span id="last-refresh">loading…</span></div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn" onclick="exportToCSV()">Download for Excel (CSV)</button>
+                    <button class="btn btn-outline" onclick="fetchResults()">Refresh</button>
+                    <button class="btn btn-outline" onclick="logoutAdmin()">Log out</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="notice" class="notice"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-title">Students who submitted</div><div class="stat-val" id="total-count">0</div></div>
+            <div class="stat-card"><div class="stat-title">Average score</div><div class="stat-val" id="avg-score">—</div></div>
+            <div class="stat-card"><div class="stat-title">Completed</div><div class="stat-val" style="color: var(--success);" id="success-count">0</div></div>
+            <div class="stat-card"><div class="stat-title">Working now</div><div class="stat-val" style="color: var(--navy);" id="live-count">0</div></div>
+            <div class="stat-card"><div class="stat-title">Disqualified</div><div class="stat-val" style="color: var(--danger);" id="failed-count">0</div></div>
+            <div class="stat-card"><div class="stat-title">Variants (A / B / C / D / E)</div><div class="stat-val mono" style="font-size: 18px;" id="variant-counts">0 / 0 / 0 / 0 / 0</div></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <h2>List numbers (1–20)</h2>
+                <span class="muted" style="font-size: 13px;">Each column is one variant · click a number for details</span>
+            </div>
+            <div class="panel-body">
+                <div id="roster-summary" class="roster-summary"></div>
+                <div id="roster" class="roster"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <div class="live-head"><h2>Taking the exam now</h2></div>
+                <span class="muted" style="font-size: 13px;">Answers, warnings and «Check code» results update live</span>
+            </div>
+            <div class="table-wrap" style="border: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Connection</th>
+                            <th>List №</th>
+                            <th>Name</th>
+                            <th>Variant</th>
+                            <th>Current task</th>
+                            <th>Time left</th>
+                            <th>Answered</th>
+                            <th>Check code</th>
+                            <th>Warnings</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="live-body">
+                        <tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--muted);">No student is taking the exam right now.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>List №</th>
+                        <th>Name</th>
+                        <th>Group</th>
+                        <th>Variant</th>
+                        <th>Score</th>
+                        <th>Warnings</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="9" style="text-align: center; padding: 32px; color: var(--muted);">Loading results…</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="detail-modal" class="modal" onclick="if (event.target === this) closeModal()">
+            <div class="modal-content">
+                <h3 id="modal-title" style="margin-bottom: 12px;"></h3>
+                <div id="modal-body" style="font-size: 13.5px; line-height: 1.6;"></div>
+                <div class="modal-actions">
+                    <button id="reset-btn" class="btn btn-danger" onclick="resetStudent()">Restart (cancel this result)</button>
+                    <button id="release-btn" class="btn btn-danger" style="display: none;" onclick="releaseLive()">Stop the exam and release the number</button>
+                    <button class="btn" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="uni-footer">© Baku Engineering University</footer>
+
+    <script>
+        // ====================================================================
+        // CONFIGURATION
+        // ====================================================================
+        const SUPABASE_URL = (window.__ENV && window.__ENV.SUPABASE_URL) || localStorage.getItem("exam_supabase_url") || "";
+        const SUPABASE_ANON_KEY = (window.__ENV && window.__ENV.SUPABASE_ANON_KEY) || localStorage.getItem("exam_supabase_key") || "";
+
+        // SHA-256 hash of the teacher password (read from env.js or localStorage)
+        const ADMIN_HASH = (window.__ENV && window.__ENV.ADMIN_PASSWORD_HASH) || localStorage.getItem("exam_admin_hash") || "";
+        const VARIANTS = ["A", "B", "C", "D", "E"];
+        const TASK_IDS = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"];
+        const REFRESH_MS = 5000;
+        const GROUP_SIZE = 20;   // same as index.html: numbers 1–20, variant = (number - 1) % 5
+        // statuses (old Azerbaijani status codes are still recognised for earlier records)
+        const isOut = (st) => /DISQUALIFIED|\u004B\u018F\u004E\u0041\u0052/.test(String(st || ""));
+        const isLate = (st) => /TIME_UP|VAXT_B/.test(String(st || ""));
+        const isDone = (st) => /COMPLETED|TAMAMLANDI/.test(String(st || ""));
+
+        let supabaseClient = null;
+        try {
+            if (SUPABASE_URL.startsWith("http") && window.supabase) {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {}
+
+        let adminPassword = null;   // kept only in memory (never written to sessionStorage/localStorage)
+        let submissions = [];
+        let liveRows = [];          // exam_live: live state of the students during the exam
+        let liveChannel = null;     // Supabase Realtime channel (instant refresh signals)
+        let realtimeOn = false;
+        const EXAM_DURATION_MS = 80 * 60 * 1000;
+        const STALE_MS = 45000;     // no signal for 45 seconds: connection lost / page closed
+        let refreshTimer = null;
+        let failedAttempts = 0;
+
+        const $ = (id) => document.getElementById(id);
+        function esc(s) {
+            return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        }
+
+        // ====================================================================
+        // LOGIN
+        // ====================================================================
+        function handleAdminLogin(e) {
+            if (e) e.preventDefault();
+            const input = $("admin-pass-input").value.trim();
+            const errDiv = $("auth-error-msg");
+
+            if (ADMIN_HASH) {
+                if (sha256Hex(input) === ADMIN_HASH) {
+                    adminPassword = input;
+                    $("admin-pass-input").value = "";
+                    unlockDashboard();
+                    return;
+                }
+            } else {
+                adminPassword = input;
+                $("admin-pass-input").value = "";
+                unlockDashboard();
+                return;
+            }
+            failedAttempts++;
+            errDiv.style.display = "block";
+            errDiv.textContent = `Wrong password! (${failedAttempts}/3 attempts)`;
+            $("admin-pass-input").value = "";
+            if (failedAttempts >= 3) {
+                alert("Access denied! You are being redirected to the main exam page.");
+                window.location.href = "index.html";
+            }
+        }
+
+        // Realtime: every time a student sends their state a "changed" signal arrives → the panel refreshes immediately.
+        // The signal carries no personal data; data is read only through password-protected functions.
+        let fetchSoonTimer = null;
+        function fetchSoon() {
+            clearTimeout(fetchSoonTimer);
+            fetchSoonTimer = setTimeout(fetchResults, 300);
+        }
+
+        function setupRealtime() {
+            if (!supabaseClient || liveChannel) return;
+            try {
+                liveChannel = supabaseClient.channel("sdf1-live", { config: { broadcast: { self: false } } });
+                liveChannel.on("broadcast", { event: "changed" }, fetchSoon);
+                liveChannel.subscribe((status) => {
+                    realtimeOn = status === "SUBSCRIBED";
+                    updateRefreshLabel();
+                });
+            } catch (e) {
+                liveChannel = null;
+            }
+        }
+
+        let lastRefreshAt = null;
+        function updateRefreshLabel() {
+            if (!supabaseClient) return;
+            const t = lastRefreshAt ? lastRefreshAt.toLocaleTimeString("en-GB") : "—";
+            $("last-refresh").innerHTML = realtimeOn
+                ? `<span class="rt-status"><span class="live-dot"></span><b>Live mode</b> · changes appear instantly · last refresh ${esc(t)}</span>`
+                : `<span class="rt-status"><span class="live-dot off"></span>Connecting to the live channel… · refreshing every 5 seconds · last refresh ${esc(t)}</span>`;
+        }
+
+        function unlockDashboard() {
+            $("auth-gate").style.display = "none";
+            $("admin-dashboard").style.display = "block";
+            setupRealtime();
+            fetchResults();
+            clearInterval(refreshTimer);
+            refreshTimer = setInterval(fetchResults, REFRESH_MS);
+        }
+
+        function logoutAdmin() {
+            adminPassword = null;
+            submissions = [];
+            location.reload();
+        }
+
+        // ====================================================================
+        // LOADING DATA (only after the password)
+        // ====================================================================
+        function setNotice(kind, html) {
+            const n = $("notice");
+            n.className = kind ? `notice ${kind}` : "notice";
+            n.innerHTML = html || "";
+        }
+
+        async function fetchResults() {
+            if (!adminPassword) return;
+
+            if (!supabaseClient) {
+                submissions = JSON.parse(localStorage.getItem("exam_local_submissions") || "[]").reverse();
+                setNotice("warn", "Supabase is not connected — only the results saved in this browser are shown.");
+                $("last-refresh").textContent = "Local mode";
+                renderTable();
+                return;
+            }
+
+            try {
+                const [res, live] = await Promise.all([
+                    supabaseClient.rpc("admin_list_submissions", { p_password: adminPassword }),
+                    supabaseClient.rpc("admin_list_live", { p_password: adminPassword }),
+                ]);
+                const { data, error } = res;
+                liveRows = live.error ? [] : (live.data || []);
+                if (!error) {
+                    submissions = data || [];
+                    setNotice("", "");
+                    if (live.error && /could not find the function/i.test(live.error.message || "")) {
+                        setNotice("warn", "For live monitoring, run <code>supabase_setup.sql</code> again in Supabase → SQL Editor.");
+                    }
+                } else if (error.code === "PGRST202" || /could not find the function/i.test(error.message || "")) {
+                    // supabase_setup.sql has not been updated yet — read the old way
+                    const legacy = await supabaseClient.from("exam_submissions").select("*").order("created_at", { ascending: false });
+                    if (legacy.error) throw legacy.error;
+                    submissions = legacy.data || [];
+                    setNotice("warn", "<b>The security update has not been applied.</b> Anyone with the anon key (students too) can currently read the results. " +
+                        "To fix this, run <code>supabase_setup.sql</code> again in Supabase → SQL Editor.");
+                } else if (error.code === "28P01") {
+                    setNotice("err", "The server did not accept the password. The hash stored by <code>supabase_setup.sql</code> must match ADMIN_PASSWORD (env.js).");
+                    return;
+                } else {
+                    throw error;
+                }
+            } catch (err) {
+                console.error("Supabase read error:", err);
+                setNotice("err", "Could not connect to the database: " + esc(err.message || err) + " — the system will retry automatically.");
+                return;
+            }
+            lastRefreshAt = new Date();
+            updateRefreshLabel();
+            renderTable();
+        }
+
+        // ====================================================================
+        // TABLE
+        // ====================================================================
+        function scoresOf(sub) {
+            const b = sub.breakdown || {};
+            const raw = b.scores || b; // in the old format the scores were directly in breakdown
+            const out = {};
+            for (const [k, v] of Object.entries(raw)) {
+                if (typeof v === "number") out[k] = v;
+            }
+            return out;
+        }
+
+        function expectedVariant(sira) {
+            const n = parseInt(sira, 10);
+            return Number.isFinite(n) && n >= 1 ? VARIANTS[(n - 1) % 5] : null;
+        }
+
+        function issuesOf(sub, dupKeys) {
+            const issues = [];
+            const exp = expectedVariant(sub.student_id);
+            const letter = String(sub.variant || "").replace("Variant ", "");
+            if (exp && letter && exp !== letter) issues.push(`variant ${letter}, expected ${exp}`);
+            if (dupKeys.has(`${sub.student_group}|${sub.student_id}`)) issues.push("the same list number appears more than once");
+            const grading = (sub.breakdown || {}).grading;
+            if (grading && /^(partial|qismən)/.test(grading)) issues.push("coding tasks were not checked");
+            return issues;
+        }
+
+        const isAnnulled = (s) => !!s.annulled_at;
+        const activeSubs = () => submissions.filter(s => !isAnnulled(s));
+
+        function renderTable() {
+            const tbody = $("table-body");
+            const active = activeSubs();
+            const counts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+            let totalScore = 0, successCount = 0, failedCount = 0;
+
+            const seen = new Map();
+            for (const s of active) {
+                const k = `${s.student_group}|${s.student_id}`;
+                seen.set(k, (seen.get(k) || 0) + 1);
+            }
+            const dupKeys = new Set([...seen].filter(([k, n]) => n > 1 && !k.endsWith("|")).map(([k]) => k));
+
+            if (submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 30px; color: var(--muted);">No results yet.</td></tr>';
+            } else {
+                tbody.innerHTML = submissions.map((sub, idx) => {
+                    const annulled = isAnnulled(sub);
+                    if (!annulled) {
+                        totalScore += Number(sub.score) || 0;
+                        if (isDone(sub.status)) successCount++;
+                        if (isOut(sub.status)) failedCount++;
+                        const letter = String(sub.variant || "").replace("Variant ", "");
+                        if (letter in counts) counts[letter]++;
+                    }
+
+                    let statusBadge = `<span class="badge-status status-ok">Completed</span>`;
+                    if (isOut(sub.status)) statusBadge = `<span class="badge-status status-danger">Disqualified</span>`;
+                    else if (isLate(sub.status)) statusBadge = `<span class="badge-status status-warning">Time up</span>`;
+                    if (annulled) statusBadge = `<span class="badge-status status-muted">Cancelled — restarted</span>`;
+
+                    const issues = annulled ? [] : issuesOf(sub, dupKeys);
+                    const timeStr = sub.created_at ? new Date(sub.created_at).toLocaleTimeString("en-GB") : "--:--";
+                    const score = Number(sub.score) || 0;
+                    const maxScore = Number(sub.max_score) || 100;
+
+                    return `
+                        <tr${annulled ? ' class="annulled"' : ""}>
+                            <td class="mono muted">${esc(timeStr)}</td>
+                            <td class="mono">${esc(sub.student_id || "—")}</td>
+                            <td><b>${esc(sub.student_name)}</b>${issues.length ? `<div class="flag">Attention: ${esc(issues.join("; "))}</div>` : ""}</td>
+                            <td>${esc(sub.student_group)}</td>
+                            <td>${esc(String(sub.variant || "").replace("Variant ", ""))}</td>
+                            <td style="font-weight: 700; color: ${score >= 60 ? "var(--success)" : "var(--danger)"};">${score} / ${maxScore}</td>
+                            <td style="color: ${Number(sub.violations) > 0 ? "var(--danger)" : "inherit"};">${Number(sub.violations) || 0} / 3</td>
+                            <td>${statusBadge}</td>
+                            <td><button class="btn btn-outline btn-sm" onclick="viewDetails(${idx})">Details</button></td>
+                        </tr>`;
+                }).join("");
+            }
+
+            $("total-count").textContent = active.length;
+            $("avg-score").textContent = active.length ? (totalScore / active.length).toFixed(1) : "—";
+            $("success-count").textContent = successCount;
+            renderLive();
+            $("failed-count").textContent = failedCount;
+            $("variant-counts").textContent = VARIANTS.map(v => counts[v]).join(" / ");
+            renderRoster();
+        }
+
+        // ====================================================================
+        // LIVE MONITORING: students taking the exam now
+        // ====================================================================
+        function activeLive() {
+            // the latest active session for every number; numbers that already submitted are skipped
+            const submitted = new Set(activeSubs().map(s => `${s.student_group}|${s.student_id}`));
+            const seen = new Set();
+            return liveRows.filter(l => {
+                const k = `${l.student_group}|${l.student_id}`;
+                if (l.state !== "active" || seen.has(k) || submitted.has(k)) return false;
+                if (Date.now() - new Date(l.started_at).getTime() > EXAM_DURATION_MS + 10 * 60000) return false;
+                seen.add(k);
+                return true;
+            });
+        }
+
+        function liveInfo(l) {
+            const prog = l.progress || {};
+            const tested = prog.tested || {};
+            const okN = Object.values(tested).filter(Boolean).length;
+            const left = Math.max(0, EXAM_DURATION_MS - (Date.now() - new Date(l.started_at).getTime()));
+            const ago = Math.round((Date.now() - new Date(l.last_seen).getTime()) / 1000);
+            return {
+                current: prog.current || "—",
+                left: `${Math.floor(left / 60000)} min`,
+                answered: `${prog.answered ?? 0} / ${prog.total ?? 10}`,
+                tested: Object.keys(tested).length ? `${okN} correct / ${Object.keys(tested).length - okN} not yet` : "—",
+                online: ago * 1000 < STALE_MS,
+                ago,
+            };
+        }
+
+        function renderLive() {
+            const rows = activeLive();
+            $("live-count").textContent = rows.length;
+            $("live-body").innerHTML = rows.length ? rows.map(l => {
+                const i = liveInfo(l);
+                const idx = liveRows.indexOf(l);
+                return `<tr>
+                    <td>${i.online ? '<span class="live-dot"></span>online' : `<span class="live-dot off"></span><span style="color: var(--warning);">no signal for ${i.ago} s</span>`}</td>
+                    <td class="mono">${esc(l.student_id)}</td>
+                    <td><b>${esc(l.student_name)}</b></td>
+                    <td>${esc(String(l.variant).replace("Variant ", ""))}</td>
+                    <td><b>${esc(i.current)}</b></td>
+                    <td class="mono">${i.left}</td>
+                    <td>${i.answered}</td>
+                    <td>${i.tested}</td>
+                    <td style="color: ${l.violations > 0 ? "var(--danger)" : "inherit"};">${l.violations} / 3</td>
+                    <td><button class="btn btn-outline btn-sm" onclick="viewLive(${idx})">View</button></td>
+                </tr>`;
+            }).join("") : '<tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--muted);">No student is taking the exam right now.</td></tr>';
+        }
+
+        function viewLive(idx) {
+            const l = liveRows[idx];
+            if (!l) return;
+            openedIdx = null;
+            $("reset-btn").style.display = "none";
+            openedLiveIdx = idx;
+            $("release-btn").style.display = supabaseClient && l.state === "active" ? "" : "none";
+            const i = liveInfo(l);
+            const prog = l.progress || {};
+            $("modal-title").textContent = `${l.student_name} (list № ${l.student_id}) — ${l.variant} · exam in progress`;
+
+            let html = `<p><b>Started:</b> ${esc(new Date(l.started_at).toLocaleTimeString("en-GB"))} &nbsp;|&nbsp; <b>Time left:</b> ${i.left} &nbsp;|&nbsp; ` +
+                `<b>Connection:</b> ${i.online ? "online" : `no signal for ${i.ago} seconds`}</p>` +
+                `<p><b>Now on task:</b> ${esc(i.current)} &nbsp;|&nbsp; <b>Answered:</b> ${i.answered} &nbsp;|&nbsp; <b>Warnings:</b> ${l.violations} / 3</p>`;
+
+            const tested = prog.tested || {};
+            if (Object.keys(tested).length) {
+                html += `<h4>«Check code» results (latest check):</h4><div class="grid-scores">`;
+                for (const [qid, ok] of Object.entries(tested)) {
+                    html += `<div class="${ok ? "full" : "zero"}"><b>${esc(qid)}:</b> ${ok ? "correct" : "not yet"}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            const log = Array.isArray(prog.violation_log) ? prog.violation_log : [];
+            if (log.length) {
+                html += `<h4>Rule violations and blocked attempts:</h4><ul class="log-list">`;
+                for (const item of log) {
+                    const t = item.t ? new Date(item.t).toLocaleTimeString("en-GB") : "";
+                    html += `<li><span class="mono">${esc(t)}</span> — ${esc(item.reason)} ${item.counted ? '<b style="color: var(--danger);">(warning)</b>' : '<span style="color:var(--muted);">(blocked)</span>'}</li>`;
+                }
+                html += `</ul>`;
+            }
+
+            const answers = prog.answers || {};
+            html += `<h4>Current answers:</h4>`;
+            const keys = TASK_IDS.filter(k => k in answers);
+            html += keys.length
+                ? keys.map(k => `<div style="margin-bottom: 8px;"><b>${esc(k)}:</b><pre class="answer-pre">${esc(answers[k]) || "(empty)"}</pre></div>`).join("")
+                : `<p class="muted">The student has not changed any answer yet.</p>`;
+
+            $("modal-body").innerHTML = html;
+            $("detail-modal").style.display = "flex";
+        }
+
+        // ====================================================================
+        // LIST NUMBER BOARD: who has submitted, which numbers are empty
+        // ====================================================================
+        function renderRoster() {
+            const bySeat = new Map();   // number -> indexes of the results with that number (newest first)
+            submissions.forEach((s, idx) => {
+                if (isAnnulled(s)) return;
+                const n = parseInt(s.student_id, 10);
+                if (!Number.isFinite(n) || n < 1 || n > GROUP_SIZE) return;
+                if (!bySeat.has(n)) bySeat.set(n, []);
+                bySeat.get(n).push(idx);
+            });
+
+            const liveBySeat = new Map();
+            for (const l of activeLive()) liveBySeat.set(parseInt(l.student_id, 10), l);
+
+            const empty = [];
+            const cols = VARIANTS.map(v => `<div class="roster-col"><h4>Variant ${v}</h4>`);
+            for (let n = 1; n <= GROUP_SIZE; n++) {
+                const col = (n - 1) % VARIANTS.length;
+                const list = bySeat.get(n) || [];
+                if (!list.length && liveBySeat.has(n)) {
+                    const l = liveBySeat.get(n);
+                    const i = liveInfo(l);
+                    cols[col] += `<div class="seat live${i.online ? "" : " stale"}" onclick="viewLive(${liveRows.indexOf(l)})" title="${esc(l.student_name)}">
+                        <span class="no">№ ${n}</span> · <span class="live-dot${i.online ? "" : " off"}"></span>working · ${i.left} left
+                        <div class="who">${esc(l.student_name)} <span class="muted">(${i.answered} · ${l.violations}/3)</span></div></div>`;
+                    continue;
+                }
+                if (!list.length) {
+                    empty.push(n);
+                    cols[col] += `<div class="seat empty"><span class="no">№ ${n}</span><div>Empty — no result</div></div>`;
+                    continue;
+                }
+                const sub = submissions[list[0]];
+                const status = String(sub.status || "");
+                const cls = isOut(status) ? "out" : isLate(status) ? "late" : "done";
+                const label = isOut(status) ? "disqualified" : isLate(status) ? "time up" : "completed";
+                const dup = list.length > 1 ? ` · <b style="color: var(--warning);">${list.length} results</b>` : "";
+                cols[col] += `<div class="seat ${cls}${list.length > 1 ? " dup" : ""}" onclick="viewDetails(${list[0]})" title="${esc(sub.student_name)}">
+                    <span class="no">№ ${n}</span> · ${Number(sub.score) || 0} pts${dup}
+                    <div class="who">${esc(sub.student_name)} <span class="muted">(${label})</span></div></div>`;
+            }
+            $("roster").innerHTML = cols.map(c => c + "</div>").join("");
+
+            const working = [...liveBySeat.keys()].filter(n => !bySeat.has(n)).length;
+            const filled = GROUP_SIZE - empty.length - working;
+            $("roster-summary").innerHTML =
+                `<b>Submitted:</b> ${filled} / ${GROUP_SIZE} &nbsp;·&nbsp; <b>Working:</b> ${working} &nbsp;·&nbsp; ` +
+                (empty.length
+                    ? `<b>Empty numbers (${empty.length}):</b> <span class="mono">${empty.join(", ")}</span>`
+                    : `<b style="color: var(--success);">All numbers have submitted.</b>`);
+        }
+
+        // ====================================================================
+        // DETAIL VIEW
+        // ====================================================================
+        let openedIdx = null;
+
+        function viewDetails(idx) {
+            const sub = submissions[idx];
+            if (!sub) return;
+            openedIdx = idx;
+            openedLiveIdx = null;
+            $("release-btn").style.display = "none";
+            const canReset = !!(supabaseClient && sub.id && !isAnnulled(sub));
+            $("reset-btn").style.display = canReset ? "" : "none";
+            const b = sub.breakdown || {};
+            $("modal-title").textContent = `${sub.student_name} (group ${sub.student_group}, list № ${sub.student_id || "—"}) — ${sub.variant}`;
+
+            let html = isAnnulled(sub)
+                ? `<p style="color: var(--danger);"><b>This result was cancelled on ${esc(new Date(sub.annulled_at).toLocaleString("en-GB"))} — the student was allowed to start again.</b></p>`
+                : "";
+            html += `<p><b>Score:</b> ${Number(sub.score) || 0} / ${Number(sub.max_score) || 100} &nbsp;|&nbsp; <b>Warnings:</b> ${Number(sub.violations) || 0} / 3 &nbsp;|&nbsp; <b>Status:</b> ${esc(sub.status)}</p>`;
+            if (b.grading) html += `<p><b>Grading:</b> ${esc(b.grading === "pyodide" ? "automatic (Python)" : b.grading)}</p>`;
+            if (b.started_at) html += `<p><b>Started:</b> ${esc(new Date(b.started_at).toLocaleString("en-GB"))} &nbsp;|&nbsp; <b>Finished:</b> ${esc(new Date(b.finished_at).toLocaleString("en-GB"))}</p>`;
+            html += `<hr style="margin: 12px 0; border: none; border-top: 1px solid var(--border);">`;
+
+            const scores = scoresOf(sub);
+            if (Object.keys(scores).length) {
+                html += `<h4 style="margin-bottom: 8px;">Points per task:</h4><div class="grid-scores">`;
+                for (const [qid, pts] of Object.entries(scores)) {
+                    html += `<div class="${pts > 0 ? "full" : "zero"}"><b>${esc(qid)}:</b> ${pts} pts</div>`;
+                }
+                html += `</div>`;
+            }
+
+            const log = Array.isArray(b.violation_log) ? b.violation_log : [];
+            if (log.length) {
+                html += `<h4 style="margin-bottom: 8px;">Rule violations and blocked attempts:</h4><ul class="log-list">`;
+                for (const item of log) {
+                    const t = item.t ? new Date(item.t).toLocaleTimeString("en-GB") : "";
+                    html += `<li><span class="mono">${esc(t)}</span> — ${esc(item.reason)} ${item.counted ? '<b style="color: var(--danger);">(warning)</b>' : '<span style="color:var(--muted);">(blocked)</span>'}</li>`;
+                }
+                html += `</ul>`;
+            }
+
+            if (sub.answers) {
+                html += `<h4 style="margin-bottom: 8px;">Student answers:</h4>`;
+                for (const [qid, text] of Object.entries(sub.answers)) {
+                    html += `<div style="margin-bottom: 8px;"><b>${esc(qid)}:</b><pre class="answer-pre">${esc(text) || "(left empty)"}</pre></div>`;
+                }
+            }
+
+            $("modal-body").innerHTML = html;
+            $("detail-modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            $("detail-modal").style.display = "none";
+            openedIdx = null;
+        }
+
+        // The teacher cancels a student's result → the student can start the exam again with the same number.
+        // The result is not deleted; it stays in the table marked as "cancelled".
+        // Stops a running exam and releases the number (e.g. the student's computer broke down,
+        // or someone logged in with another student's number). The exam on that computer closes immediately.
+        let openedLiveIdx = null;
+        async function releaseLive() {
+            const l = liveRows[openedLiveIdx];
+            if (!l || !adminPassword) return;
+            const ok = confirm(
+                `${l.student_name} (list № ${l.student_id}, ${l.variant}) — the exam is in progress.\n\n` +
+                "This session will be stopped: the exam on that computer will close immediately and the written answers will not be submitted.\n" +
+                `Number ${l.student_id} will be released and the exam can be started again (from scratch).\n\nContinue?`);
+            if (!ok) return;
+            const { error } = await supabaseClient.rpc("admin_release_live", { p_password: adminPassword, p_session_id: l.session_id });
+            if (error) {
+                alert(/could not find the function/i.test(error.message || "")
+                    ? "This function does not exist in the database. Run supabase_setup.sql again in Supabase → SQL Editor."
+                    : "Failed: " + (error.message || error));
+                return;
+            }
+            if (liveChannel) {
+                try { liveChannel.send({ type: "broadcast", event: "reset", payload: {} }); } catch (e) {}
+            }
+            closeModal();
+            await fetchResults();
+            alert(`Number ${l.student_id} has been released. The exam of ${l.student_name} was stopped.`);
+        }
+
+        async function resetStudent() {
+            const sub = submissions[openedIdx];
+            if (!sub || !sub.id || !adminPassword) return;
+            const ok = confirm(
+                `${sub.student_name} (list № ${sub.student_id}, ${sub.variant}) — ${Number(sub.score) || 0} points.\n\n` +
+                "This result will be cancelled and the student will be able to start the exam again (from scratch, 80 minutes).\n" +
+                "A cancelled result is not included in the statistics or the Excel file.\n\nContinue?");
+            if (!ok) return;
+            const { error } = await supabaseClient.rpc("admin_reset_submission", { p_password: adminPassword, p_id: sub.id });
+            if (error) {
+                alert(/could not find the function/i.test(error.message || "")
+                    ? "This function does not exist in the database. Run supabase_setup.sql again in Supabase → SQL Editor."
+                    : "Could not cancel the result: " + (error.message || error));
+                return;
+            }
+            if (liveChannel) {
+                try { liveChannel.send({ type: "broadcast", event: "reset", payload: {} }); } catch (e) {}
+            }
+            closeModal();
+            await fetchResults();
+            alert(`The exam of ${sub.student_name} has been restarted. The student's screen will return to the login screen immediately.`);
+        }
+
+        // ====================================================================
+        // EXPORT FOR EXCEL
+        // UTF-16LE + TAB separator: Excel splits the columns correctly with any regional setting (az/ru/en)
+        // and keeps non-English letters (ə, ş, ğ ...) intact.
+        // ====================================================================
+        function cell(v) {
+            let s = String(v ?? "");
+            if (/^[=+\-@]/.test(s)) s = "'" + s;          // protection against Excel formula injection
+            if (/[\t\n\r"]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        }
+
+        function exportToCSV() {
+            if (activeSubs().length === 0) {
+                alert("There is no data to export!");
+                return;
+            }
+            const header = ["Time", "List number", "Name", "Group", "Variant", "Score", "Max score", "Rule violations", "Status", "Grading", ...TASK_IDS];
+            const rows = [header.join("\t")];
+            for (const s of activeSubs()) {
+                const sc = scoresOf(s);
+                rows.push([
+                    s.created_at ? new Date(s.created_at).toLocaleString("en-GB") : "",
+                    s.student_id || "",
+                    s.student_name,
+                    s.student_group,
+                    s.variant,
+                    Number(s.score) || 0,
+                    Number(s.max_score) || 100,
+                    Number(s.violations) || 0,
+                    s.status,
+                    (s.breakdown || {}).grading || "",
+                    ...TASK_IDS.map(id => sc[id] ?? ""),
+                ].map(cell).join("\t"));
+            }
+            const text = rows.join("\r\n");
+            const bytes = new Uint8Array(2 + text.length * 2);
+            bytes[0] = 0xFF; bytes[1] = 0xFE; // UTF-16LE BOM
+            for (let i = 0; i < text.length; i++) {
+                const c = text.charCodeAt(i);
+                bytes[2 + i * 2] = c & 0xFF;
+                bytes[3 + i * 2] = c >> 8;
+            }
+            const blob = new Blob([bytes], { type: "text/csv;charset=utf-16le" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `SDF1_Programming_Fundamentals_1248_Results_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+    </script>
+</body>
+</html>

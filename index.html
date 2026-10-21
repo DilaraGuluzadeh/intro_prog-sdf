@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDF 1 — Programming Fundamentals | Baku Engineering University</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="env.js"></script>
+    <script src="sha256.js"></script>
+    <script src="exam_data.js"></script>
+    <style>
+        :root {
+            --navy: #14305a;
+            --navy-dark: #0e2343;
+            --gold: #a8873a;
+            --bg: #f2f3f5;
+            --paper: #ffffff;
+            --text: #1b1f24;
+            --muted: #5a6370;
+            --border: #c8cdd4;
+            --border-light: #e1e4e8;
+            --ok: #1d6b3a;
+            --ok-bg: #eef6f0;
+            --bad: #9b1c1c;
+            --bad-bg: #fbefef;
+            --warn: #8a5a00;
+            --code-bg: #f6f7f9;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        input, textarea { user-select: text; -webkit-user-select: text; }
+
+        body {
+            font-family: 'Noto Sans', 'Segoe UI', Arial, sans-serif;
+            font-size: 15px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3 { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; color: var(--navy-dark); }
+
+        /* University header */
+        .uni-header {
+            background: var(--navy);
+            color: #fff;
+            border-bottom: 3px solid var(--gold);
+        }
+        .uni-header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .uni-name { font-family: 'Noto Serif', Georgia, serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; }
+        .uni-sub { font-size: 12.5px; opacity: 0.85; margin-top: 2px; }
+        .uni-course { font-size: 13px; text-align: right; opacity: 0.95; line-height: 1.4; }
+
+        /* Exam status bar */
+        .statusbar {
+            background: var(--paper);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: none;
+        }
+        .statusbar-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 13.5px;
+        }
+        .statusbar .group { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .statusbar .label { color: var(--muted); }
+        .statusbar b { font-weight: 600; }
+        .timer { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 500; }
+        .violations.v1, .violations.v2 { color: var(--bad); }
+
+        .container { max-width: 960px; width: 100%; margin: 24px auto; padding: 0 16px; flex: 1; }
+        .narrow { max-width: 620px; }
+
+        .panel {
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            margin-bottom: 18px;
+        }
+        .panel-head {
+            border-bottom: 1px solid var(--border-light);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+        }
+        .panel-head h2 { font-size: 18px; }
+        .panel-head .task-id { font-weight: 700; color: var(--navy); margin-right: 6px; }
+        .panel-head .title { font-weight: 600; font-size: 15px; }
+        .panel-head .points { color: var(--muted); font-size: 13.5px; white-space: nowrap; }
+        .panel-body { padding: 18px 20px; }
+
+        .info-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 18px; }
+        .info-table td { border: 1px solid var(--border-light); padding: 7px 10px; }
+        .info-table td:first-child { color: var(--muted); width: 42%; background: #fafbfc; }
+
+        .rules { font-size: 14px; line-height: 1.6; padding-left: 20px; margin-bottom: 20px; }
+        .rules li { margin-bottom: 4px; }
+        .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--navy); margin-bottom: 8px; }
+
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 5px; }
+        .field input {
+            width: 100%;
+            padding: 9px 11px;
+            font: inherit;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            background: #fff;
+        }
+        .field input:focus, textarea.code-input:focus, .single-input:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+        .hint { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+        .sys-status { font-size: 12.5px; color: var(--muted); margin: 4px 0 16px; }
+
+        /* Buttons */
+        .btn {
+            font: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 9px 18px;
+            border-radius: 2px;
+            border: 1px solid var(--navy);
+            background: var(--navy);
+            color: #fff;
+            cursor: pointer;
+        }
+        .btn:hover { background: var(--navy-dark); }
+        .btn:disabled { opacity: 0.6; cursor: wait; }
+        .btn-outline { background: #fff; color: var(--navy); }
+        .btn-outline:hover { background: #eef1f6; }
+        .btn-danger { background: var(--bad); border-color: var(--bad); }
+        .btn-danger:hover { background: #7f1616; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .btn-block { width: 100%; padding: 11px; }
+
+        /* Task text */
+        .task-page .md, .task-page .md *, .task-page pre, .task-page pre * { user-select: text; -webkit-user-select: text; }
+        .md { font-size: 14.5px; line-height: 1.65; margin-bottom: 14px; }
+        .md p, .md ul, .md ol, .md .math, .md pre, .md table { margin-bottom: 10px; }
+        .md ul, .md ol { padding-left: 22px; }
+        .md h2 { font-size: 21px; margin: 8px 0 6px; }
+        .md h3 { font-size: 17px; margin: 6px 0 8px; }
+        .md h4 { display: none; } /* the task title is shown in the panel header */
+        .md hr { display: none; }
+        .md code { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--code-bg); border: 1px solid var(--border-light); padding: 0 4px; }
+        .md pre code { border: none; padding: 0; background: none; }
+        .md table { border-collapse: collapse; font-size: 13.5px; }
+        .md th, .md td { border: 1px solid var(--border); padding: 4px 10px; }
+        .dep-note { background: #fbf5e6; border: 1px solid #e3cf9f; border-left: 4px solid var(--warn); padding: 9px 12px; margin-bottom: 14px; font-size: 14px; color: #4d3500; }
+        .section-block { margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--navy); }
+        .section-block .md { margin-bottom: 4px; }
+
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: var(--code-bg);
+            border: 1px solid var(--border-light);
+            padding: 10px 14px;
+            overflow-x: auto;
+        }
+
+        textarea.code-input {
+            width: 100%;
+            min-height: 140px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            background: #fff;
+            resize: vertical;
+            tab-size: 4;
+            white-space: pre;
+            overflow-x: auto;
+            color: var(--text);
+        }
+
+        .single-input { width: 220px; padding: 8px 11px; font: inherit; border: 1px solid var(--border); border-radius: 2px; }
+
+        .code-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+        .result { display: none; margin-top: 10px; padding: 9px 12px; font-size: 14px; line-height: 1.5; border: 1px solid var(--border-light); border-left-width: 4px; }
+        .result.ok { display: block; background: var(--ok-bg); border-left-color: var(--ok); }
+        .result.bad { display: block; background: var(--bad-bg); border-left-color: var(--bad); }
+        .result.info { display: block; background: #f7f8fa; border-left-color: var(--border); color: var(--muted); }
+        .result .head { font-weight: 600; }
+        .result.ok .head { color: var(--ok); }
+        .result.partial { display: block; background: #fff8e6; border-left-color: #d9a400; }
+        .result.partial .head { color: #8a6500; }
+        .result.bad .head { color: var(--bad); }
+        .result .detail { margin-top: 3px; font-size: 13.5px; }
+        .result pre { margin-top: 8px; font-size: 12px; white-space: pre-wrap; background: #fff; }
+
+        .options-list { display: flex; flex-direction: column; gap: 6px; }
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            font-size: 14.5px;
+            line-height: 1.45;
+        }
+        .option-label:hover { background: #f7f8fa; }
+        .option-label.selected { border-color: var(--navy); background: #eef1f6; }
+        .option-label input { margin-top: 4px; accent-color: var(--navy); }
+        .option-key { font-weight: 600; min-width: 18px; }
+
+        .finish-row { text-align: center; margin: 28px 0 48px; }
+
+        /* Pages: one task per page */
+        .task-page { display: none; }
+        .task-page.current { display: block; }
+        .task-page .section-block { margin-top: 4px; }
+        .pager { padding: 12px 16px; margin-bottom: 16px; }
+        .pager-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .pager-head b { font-size: 15px; }
+        .page-nav { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+        .nav-btn {
+            font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 0;
+            border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; border-radius: 2px;
+        }
+        .nav-btn:hover { border-color: var(--navy); }
+        .nav-btn.answered { background: #e6ebf3; border-color: #9fb0c8; }
+        .nav-btn.current { background: var(--navy); border-color: var(--navy); color: #fff; }
+        .page-legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+        .page-legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--border); margin-right: 5px; vertical-align: -1px; }
+        .page-buttons { display: flex; justify-content: space-between; gap: 10px; margin: 18px 0 48px; }
+        @media (max-width: 640px) { .page-nav { grid-template-columns: repeat(5, 1fr); } }
+
+        /* Modals */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(14, 35, 67, 0.82);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        #warning-overlay { z-index: 10001; }
+        .modal {
+            background: var(--paper);
+            max-width: 500px;
+            width: 100%;
+            border-top: 4px solid var(--navy);
+            padding: 24px 26px;
+        }
+        .modal.alert { border-top-color: var(--bad); }
+        .modal h3 { font-size: 19px; margin-bottom: 10px; }
+        .modal.alert h3 { color: var(--bad); }
+        .modal p { font-size: 14.5px; line-height: 1.6; margin-bottom: 12px; }
+        .modal .counter { font-weight: 700; color: var(--bad); margin-bottom: 18px; }
+        .modal .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--navy-dark);
+            color: #fff;
+            padding: 9px 16px;
+            font-size: 13.5px;
+            z-index: 10002;
+            display: none;
+        }
+
+        .uni-footer { text-align: center; font-size: 12px; color: var(--muted); padding: 18px 16px 24px; }
+        .uni-footer a { color: var(--muted); }
+
+        #exam-screen, #resume-screen, #complete-screen { display: none; }
+
+        @media (max-width: 640px) {
+            .uni-course { text-align: left; }
+            .panel-head { flex-direction: column; gap: 2px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="uni-header">
+        <div class="uni-header-inner">
+            <div>
+                <div class="uni-name">BAKU ENGINEERING UNIVERSITY</div>
+                <div class="uni-sub">Faculty of Information and Computer Technologies · Computer Engineering</div>
+            </div>
+            <div class="uni-course">Programming Fundamentals · 1st year<br>In-semester assessment — SDF 1</div>
+        </div>
+    </header>
+
+    <!-- Status bar during the exam -->
+    <div id="statusbar" class="statusbar">
+        <div class="statusbar-inner">
+            <div class="group">
+                <span><span class="label">Student:</span> <b id="display-student-name"></b></span>
+                <span><span class="label">List №:</span> <b id="display-student-no"></b></span>
+                <span><span class="label">Variant:</span> <b id="display-variant"></b></span>
+            </div>
+            <div class="group">
+                <span id="py-chip" class="label">Checking system is loading…</span>
+                <span id="violations-display" class="violations"><span class="label">Warnings:</span> <b>0 / 3</b></span>
+                <span><span class="label">Time left:</span> <b id="timer-display" class="timer">80:00</b></span>
+                <button class="btn btn-sm" onclick="openFinishModal()">Finish exam</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. LOGIN -->
+    <main id="login-screen" class="container narrow">
+        <div class="panel">
+            <div class="panel-head"><h2>Exam login</h2></div>
+            <div class="panel-body">
+                <table class="info-table">
+                    <tr><td>Course</td><td>Programming Fundamentals</td></tr>
+                    <tr><td>Assessment</td><td>SDF 1 (in-semester)</td></tr>
+                    <tr><td>Year / group</td><td>1st year, group <span id="group-name"></span></td></tr>
+                    <tr><td>Duration</td><td>80 minutes</td></tr>
+                    <tr><td>Tasks</td><td>10 tasks (4 theoretical + 6 Python coding), 100 points</td></tr>
+                </table>
+
+                <div class="section-title">Exam rules</div>
+                <ol class="rules">
+                    <li>The exam is taken in full-screen mode.</li>
+                    <li>Switching to another window or tab (including Alt+Tab), minimising the browser, leaving full-screen mode and reloading the page are rule violations.</li>
+                    <li>At the third violation the exam is cancelled automatically and the result is recorded as 0 points.</li>
+                    <li>Ctrl+C / Ctrl+V work only inside the exam: you can copy from the task text and from your own code into the answer boxes, but you cannot paste text from outside or copy the tasks out of the exam. Right-click and the browser developer tools are blocked.</li>
+                    <li>There is one task per page. You can move between tasks at any time — everything you write is saved.</li>
+                    <li>In coding tasks you can check your solution with the «Check code» button. Your function may <b>return</b> or <b>print</b> its answer — both are accepted, and any correct approach earns the points.</li>
+                    <li>Some coding tasks are graded 0 or 10 points only, others with partial credit (0–10 points); this is written in the header of every task.</li>
+                </ol>
+
+                <div class="field">
+                    <label for="input-name">First name and surname</label>
+                    <input type="text" id="input-name" autocomplete="off" maxlength="80">
+                </div>
+                <div class="field">
+                    <label for="input-id">Your number in the class list</label>
+                    <input type="text" id="input-id" autocomplete="off" inputmode="numeric" maxlength="3">
+                    <div class="hint">Ask the teacher for your list number (1–20).</div>
+                </div>
+
+                <div class="sys-status">System status: <span id="sys-status-text">checking…</span></div>
+                <div id="login-error" class="result bad" style="display: none; margin-bottom: 12px;"></div>
+                <div id="login-notice" class="result ok" style="display: none; margin-bottom: 12px;"></div>
+                <button id="start-btn" class="btn btn-block" onclick="startExamFlow()">Start the exam</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 1b. RESUME (after a page reload) -->
+    <main id="resume-screen" class="container narrow">
+        <div class="panel">
+            <div class="panel-head"><h2>The exam is in progress</h2></div>
+            <div class="panel-body">
+                <p id="resume-desc" style="line-height: 1.6; margin-bottom: 16px;"></p>
+                <button class="btn btn-block" onclick="resumeExam()">Go full screen and continue</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 2. TASKS -->
+    <main id="exam-screen" class="container">
+        <div class="panel pager">
+            <div class="pager-head">
+                <b id="page-label">Task 1 / 10</b>
+                <span class="hint" id="answered-label"></span>
+            </div>
+            <div id="page-nav" class="page-nav"></div>
+            <div class="page-legend">
+                <span><i style="background: var(--navy); border-color: var(--navy);"></i>current task</span>
+                <span><i style="background: #e6ebf3; border-color: #9fb0c8;"></i>answered</span>
+                <span><i></i>no answer</span>
+            </div>
+        </div>
+        <div id="questions-container"></div>
+        <div class="page-buttons">
+            <button id="prev-btn" class="btn btn-outline" onclick="showPage(currentPage - 1)">← Previous task</button>
+            <button id="next-btn" class="btn" onclick="nextOrFinish()">Next task →</button>
+        </div>
+    </main>
+
+    <!-- 3. RESULT -->
+    <main id="complete-screen" class="container narrow">
+        <div class="panel">
+            <div class="panel-head"><h2 id="complete-title">The exam is finished</h2></div>
+            <div class="panel-body">
+                <p id="complete-desc" style="margin-bottom: 14px; line-height: 1.6;"></p>
+                <table class="info-table" id="complete-table" style="display: none;">
+                    <tr><td>Student</td><td id="res-name"></td></tr>
+                    <tr><td>List number</td><td id="res-no"></td></tr>
+                    <tr><td>Variant</td><td id="res-variant"></td></tr>
+                    <tr><td>Score</td><td><b id="display-final-score"></b></td></tr>
+                    <tr><td>Rule violations</td><td id="display-violations-final"></td></tr>
+                </table>
+                <div id="upload-status" class="result info"></div>
+                <p class="hint" style="margin-top: 14px;">Show your result to the exam supervisor before you leave the computer.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="uni-footer">
+        © Baku Engineering University
+        <span id="teacher-reset" style="display: none;"> · <a href="#" onclick="teacherReset(); return false;">For the exam supervisor: reset this computer</a></span>
+    </footer>
+
+    <!-- Rule violation -->
+    <div id="warning-overlay" class="overlay">
+        <div class="modal alert">
+            <h3 id="warning-title-text">A rule violation was recorded</h3>
+            <p id="warning-desc-text"></p>
+            <div class="counter" id="warning-remaining-text"></div>
+            <div class="actions">
+                <button id="warning-btn" class="btn btn-danger" onclick="dismissWarning()">Return to full screen and continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full-screen request (not counted as a violation) -->
+    <div id="fullscreen-gate" class="overlay">
+        <div class="modal">
+            <h3>Full-screen mode is required</h3>
+            <p>The exam can continue only in full-screen mode.</p>
+            <div class="actions"><button class="btn" onclick="enterFullscreen()">Go full screen</button></div>
+        </div>
+    </div>
+
+    <!-- Finish confirmation -->
+    <div id="finish-overlay" class="overlay">
+        <div class="modal">
+            <h3>Finish the exam</h3>
+            <p id="finish-desc"></p>
+            <div class="actions">
+                <button class="btn btn-outline" onclick="closeFinishModal()">Go back</button>
+                <button id="finish-confirm-btn" class="btn" onclick="confirmFinishExam()">Confirm and finish</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ====================================================================
+        // CONFIGURATION
+        // ====================================================================
+        const SUPABASE_URL = (window.__ENV && window.__ENV.SUPABASE_URL) || localStorage.getItem("exam_supabase_url") || "";
+        const SUPABASE_ANON_KEY = (window.__ENV && window.__ENV.SUPABASE_ANON_KEY) || localStorage.getItem("exam_supabase_key") || "";
+        const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+        const ADMIN_HASH = (window.__ENV && window.__ENV.ADMIN_PASSWORD_HASH) || localStorage.getItem("exam_admin_hash") || ""; // only for resetting a computer
+
+        const GROUP_NAME = "1248";
+        const VARIANTS = ["A", "B", "C", "D", "E"];
+        const GROUP_SIZE = 20;               // 20 students → 4 per variant
+        const EXAM_DURATION_SEC = 80 * 60;   // 80 minutes
+        const MAX_VIOLATIONS = 3;
+        const SESSION_KEY = "pf1248_exam_session_v1";
+
+        // Same rule as in students_20.py: (list number - 1) % 5
+        function variantFor(sira) {
+            return VARIANTS[(sira - 1) % VARIANTS.length];
+        }
+
+        let supabaseClient = null;
+        try {
+            if (SUPABASE_URL.startsWith("http") && window.supabase) {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.log("Supabase setup:", e);
+        }
+
+        // ====================================================================
+        // HELPER FUNCTIONS
+        // ====================================================================
+        const $ = (id) => document.getElementById(id);
+        $("group-name").textContent = GROUP_NAME;
+
+        function escapeHtml(s) {
+            return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        }
+
+        // Removes the leading icon (✅/❌) of a check message for a formal look
+        const plainMsg = (msg) => String(msg || "").replace(/^\S+\s+/, "");
+
+        let toastTimer = null;
+        function showToast(text) {
+            const t = $("toast");
+            t.textContent = text;
+            t.style.display = "block";
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { t.style.display = "none"; }, 2500);
+        }
+
+        function updateSysStatus() {
+            const el = $("sys-status-text");
+            if (!supabaseClient) el.innerHTML = '<span style="color: var(--warn);">results cannot be sent to the database — tell the exam supervisor</span>';
+            else if (py.state === "ready") el.innerHTML = '<span style="color: var(--ok);">ready</span>';
+            else if (py.state === "failed") el.innerHTML = '<span style="color: var(--bad);">the checking system did not load — check the internet connection</span>';
+            else el.textContent = "loading… (this may take a few seconds)";
+        }
+
+        // ====================================================================
+        // SESSION (warnings, time and answers survive a page reload)
+        // ====================================================================
+        let session = null;
+
+        function loadSession() {
+            try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (e) { return null; }
+        }
+
+        function saveSession() {
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+        }
+
+        let saveTimer = null;
+        function saveSessionSoon() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveSession, 400);
+            if (session && session.status === "active") liveSyncSoon(3000);
+            if (typeof updateNav === "function") updateNav();
+        }
+
+        // ====================================================================
+        // LIVE MONITORING (backend: Supabase — student_heartbeat function + Realtime channel)
+        // The student's state (answers, warnings, "Check code" results) is sent to the server
+        // and the teacher panel is notified immediately.
+        // ====================================================================
+        let liveChannel = null, liveTimer = null, liveInterval = null, liveWarned = false;
+        let resetCheck = null;
+
+        function setupRealtime() {
+            if (!supabaseClient || liveChannel) return;
+            try {
+                liveChannel = supabaseClient.channel("sdf1-live", { config: { broadcast: { self: false } } });
+                liveChannel.on("broadcast", { event: "reset" }, () => {
+                    if (resetCheck) resetCheck();
+                    if (session && session.status === "active" && examActive) liveSync();
+                });
+                liveChannel.subscribe();
+            } catch (e) {
+                liveChannel = null;
+            }
+        }
+
+        function pingTeacher() {
+            if (!liveChannel) return;
+            try { liveChannel.send({ type: "broadcast", event: "changed", payload: {} }); } catch (e) {}
+        }
+
+        async function liveSync() {
+            clearTimeout(liveTimer);
+            if (!supabaseClient || !session || !session.sessionId) return;
+            const final = session.status === "finished" && session.record;
+            const state = !final ? "active" : (session.record.status === "DISQUALIFIED_3_WARNINGS" ? "terminated" : "finished");
+            const answers = session.answers || {};
+            const tasks = activeVariant ? activeVariant.tasks : [];
+            const answered = tasks.filter(t => {
+                const a = answers[t.id];
+                return t.kind === "code" ? (a !== undefined && a !== t.starter) : String(a || "").trim() !== "";
+            }).length;
+            try {
+                const { data: liveState, error } = await supabaseClient.rpc("student_heartbeat", {
+                    p_session_id: session.sessionId,
+                    p_group: session.group || GROUP_NAME,
+                    p_sira: String(session.sira),
+                    p_name: session.name,
+                    p_variant: "Variant " + session.variant,
+                    p_started_at: new Date(session.startedAt).toISOString(),
+                    p_violations: Math.min(session.violations, MAX_VIOLATIONS),
+                    p_state: state,
+                    p_progress: {
+                        answers, answered, total: tasks.length,
+                        tested: session.tested || {},
+                        current: pages[currentPage] ? pages[currentPage].id : null,
+                        violation_log: session.log || [],
+                        score: final ? session.record.score : null,
+                    },
+                });
+                if (error) {
+                    if (!liveWarned) { console.warn("Live monitoring:", error.message); liveWarned = true; }
+                    return;
+                }
+                if (liveState === "released" && session.status === "active") {
+                    stopReleasedSession();
+                    return;
+                }
+                pingTeacher();
+            } catch (e) {}
+        }
+
+        function liveSyncSoon(ms) {
+            clearTimeout(liveTimer);
+            liveTimer = setTimeout(liveSync, ms);
+        }
+
+        function startLiveSync() {
+            if (!session.sessionId) { session.sessionId = newRecordId(); saveSession(); }
+            liveSync();
+            clearInterval(liveInterval);
+            liveInterval = setInterval(liveSync, 15000);
+        }
+
+        // ====================================================================
+        // PYTHON ENVIRONMENT (Pyodide in a separate Web Worker — an infinite loop does not freeze the page)
+        // ====================================================================
+        const WORKER_SRC = `
+            const post = self.postMessage.bind(self);
+            let py = null;
+            self.onmessage = async (ev) => {
+                const msg = ev.data;
+                if (msg.type === "init") {
+                    try {
+                        importScripts(msg.indexURL + "pyodide.js");
+                        py = await loadPyodide({ indexURL: msg.indexURL });
+                        py.runPython(msg.harness);
+                        post({ type: "ready" });
+                    } catch (e) {
+                        post({ type: "init-error", error: String(e) });
+                    }
+                } else if (msg.type === "run") {
+                    try {
+                        const fn = py.globals.get("run_json");
+                        const out = fn(msg.payload);
+                        fn.destroy();
+                        post({ type: "result", id: msg.id, result: out });
+                    } catch (e) {
+                        post({ type: "result", id: msg.id, error: String(e) });
+                    }
+                }
+            };
+        `;
+
+        const py = { worker: null, state: "loading", pending: new Map(), seq: 0, readyWaiters: [] };
+
+        function setPyStatus(state) {
+            py.state = state;
+            const chip = $("py-chip");
+            if (state === "ready") { chip.textContent = "Checking system: ready"; chip.style.color = "var(--ok)"; }
+            else if (state === "failed") { chip.textContent = "Checking system: connection error"; chip.style.color = "var(--bad)"; }
+            else { chip.textContent = "Checking system is loading…"; chip.style.color = ""; }
+            updateSysStatus();
+            if (state !== "loading") py.readyWaiters.splice(0).forEach(fn => fn(state === "ready"));
+        }
+
+        function startPython() {
+            if (py.worker) py.worker.terminate();
+            for (const [, p] of py.pending) p.reject(new Error("The checking system was restarted"));
+            py.pending.clear();
+            setPyStatus("loading");
+            try {
+                const blobUrl = URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" }));
+                py.worker = new Worker(blobUrl);
+            } catch (e) {
+                console.error(e);
+                setPyStatus("failed");
+                return;
+            }
+            py.worker.onmessage = (ev) => {
+                const m = ev.data;
+                if (m.type === "ready") setPyStatus("ready");
+                else if (m.type === "init-error") { console.error(m.error); setPyStatus("failed"); }
+                else if (m.type === "result" && py.pending.has(m.id)) {
+                    const p = py.pending.get(m.id);
+                    py.pending.delete(m.id);
+                    clearTimeout(p.timer);
+                    if (m.error) p.reject(new Error(m.error));
+                    else p.resolve(JSON.parse(m.result));
+                }
+            };
+            py.worker.onerror = (e) => {
+                if (py.state === "loading") { console.error(e.message); setPyStatus("failed"); }
+            };
+            py.worker.postMessage({ type: "init", indexURL: PYODIDE_URL, harness: window.EXAM_DATA.harness });
+        }
+
+        function waitForPython(maxMs) {
+            if (py.state !== "loading") return Promise.resolve(py.state === "ready");
+            return new Promise(resolve => {
+                const t = setTimeout(() => resolve(false), maxMs);
+                py.readyWaiters.push(ok => { clearTimeout(t); resolve(ok); });
+            });
+        }
+
+        // Runs code in Python. If hardTimeoutMs passes, the worker is stopped and reloaded.
+        function runPython(payload, hardTimeoutMs) {
+            return new Promise((resolve, reject) => {
+                if (py.state !== "ready") return reject(new Error("The checking system is not ready"));
+                const id = ++py.seq;
+                const timer = setTimeout(() => {
+                    py.pending.delete(id);
+                    reject(new Error("The code ran for too long (possibly an infinite loop). The checking system is restarting."));
+                    startPython();
+                }, hardTimeoutMs);
+                py.pending.set(id, { resolve, reject, timer });
+                py.worker.postMessage({ type: "run", id, payload: JSON.stringify(payload) });
+            });
+        }
+
+        // ====================================================================
+        // STATE
+        // ====================================================================
+        let activeVariant = null;
+        let examActive = false;
+        let submitting = false;
+        let timerInterval = null;
+        let warningModalOpen = false;
+        let lastViolationAt = 0;
+
+        // ====================================================================
+        // LOGIN AND VARIANT ASSIGNMENT
+        // ====================================================================
+        function parseSira(raw) {
+            const s = String(raw || "").trim();
+            if (!/^\d+$/.test(s)) return null;
+            const n = parseInt(s, 10);
+            return (n >= 1 && n <= GROUP_SIZE) ? n : null;
+        }
+
+        function showLoginError(text) {
+            const el = $("login-error");
+            el.textContent = text;
+            el.style.display = text ? "block" : "none";
+            if (text) $("login-notice").style.display = "none";
+        }
+
+        // Is there already a (non-cancelled) result for this number? If the database is unreachable, the exam is not blocked.
+        async function seatIsTaken(sira) {
+            if (!supabaseClient) return false;
+            try {
+                const { data, error } = await supabaseClient.rpc("seat_is_taken", { p_group: GROUP_NAME, p_sira: String(sira) });
+                if (error) { console.warn("seat_is_taken:", error.message); return false; }
+                return data === true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Claims the number on the server: only one exam can run with the same number at a time
+        // (a unique index in the database rejects two simultaneous clicks).
+        // Result: "ok" | "in_use" | "submitted". If the server function is missing, the old check is used.
+        async function claimSeat(sessionId, name, sira, startedAt) {
+            if (!supabaseClient) return "ok";
+            try {
+                const { data, error } = await supabaseClient.rpc("claim_seat", {
+                    p_session_id: sessionId, p_group: GROUP_NAME, p_sira: String(sira), p_name: name,
+                    p_variant: "Variant " + variantFor(sira), p_started_at: new Date(startedAt).toISOString(),
+                });
+                if (!error) return data || "ok";
+                console.warn("claim_seat:", error.message);
+            } catch (e) {}
+            return (await seatIsTaken(sira)) ? "submitted" : "ok";
+        }
+
+        // If the teacher stopped this session and released the number
+        function stopReleasedSession() {
+            examActive = false;
+            submitting = true;
+            clearInterval(timerInterval);
+            clearInterval(liveInterval);
+            localStorage.removeItem(SESSION_KEY);
+            try { sessionStorage.setItem("sdf1_released_notice", "1"); } catch (e) {}
+            if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            location.reload();
+        }
+
+        async function startExamFlow() {
+            const name = $("input-name").value.trim().replace(/\s+/g, " ");
+            const sira = parseSira($("input-id").value);
+            showLoginError("");
+
+            if (name.length < 3 || !name.includes(" ")) {
+                showLoginError("Please enter your first name and surname.");
+                return;
+            }
+            if (!sira) {
+                showLoginError(`The list number must be between 1 and ${GROUP_SIZE}.`);
+                return;
+            }
+
+            enterFullscreen(); // must be called inside the user click (before the check)
+            const btn = $("start-btn");
+            btn.disabled = true;
+            btn.textContent = "Checking…";
+            const sessionId = newRecordId();
+            const startedAt = Date.now();
+            const claim = await claimSeat(sessionId, name, sira, startedAt);
+            btn.disabled = false;
+            btn.textContent = "Start the exam";
+            if (claim !== "ok") {
+                if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                showLoginError(claim === "in_use"
+                    ? `Number ${sira} is currently taking the exam on another computer. If this is your number, contact the exam supervisor.`
+                    : `The exam has already been submitted for number ${sira}. Starting again is possible only with the supervisor's permission — contact the exam supervisor.`);
+                return;
+            }
+
+            session = {
+                name, group: GROUP_NAME, sira, variant: variantFor(sira),
+                sessionId,
+                startedAt,
+                violations: 0,
+                log: [],
+                answers: {},
+                status: "active",
+            };
+            saveSession();
+            openExam();
+        }
+
+        function resumeExam() {
+            enterFullscreen();
+            openExam();
+            registerViolation("The page was reloaded or closed.");
+        }
+
+        function openExam() {
+            activeVariant = window.EXAM_DATA.variants[session.variant];
+            renderQuestions();
+
+            $("display-student-name").textContent = session.name;
+            $("display-student-no").textContent = session.sira;
+            $("display-variant").textContent = session.variant;
+            updateViolationsDisplay();
+
+            $("login-screen").style.display = "none";
+            $("resume-screen").style.display = "none";
+            $("statusbar").style.display = "block";
+            $("exam-screen").style.display = "block";
+
+            examActive = true;
+            startTimer();
+            startLiveSync();
+        }
+
+        // ====================================================================
+        // TASKS (exam_data.js — generated by tools/build_bank.py)
+        // ====================================================================
+        // Every task is on its own page. All pages are created once and only hidden,
+        // so nothing written is lost when moving between pages.
+        let pages = [];
+        let currentPage = 0;
+
+        function renderQuestions() {
+            const container = $("questions-container");
+            container.innerHTML = "";
+            pages = [];
+            const tasksById = Object.fromEntries(activeVariant.tasks.map(t => [t.id, t]));
+            let sectionHtml = null, fixedCode = null;
+
+            for (const item of activeVariant.items) {
+                if (item.type === "section") {
+                    sectionHtml = item.html;
+                    fixedCode = null;
+                } else if (item.type === "fixed") {
+                    fixedCode = item.code;
+                } else if (item.type === "task") {
+                    const page = document.createElement("div");
+                    page.className = "task-page";
+                    if (sectionHtml) {
+                        const div = document.createElement("div");
+                        div.className = "section-block";
+                        div.innerHTML = `<div class="md">${sectionHtml}</div>`;
+                        page.appendChild(div);
+                    }
+                    if (fixedCode) {
+                        const panel = document.createElement("div");
+                        panel.className = "panel";
+                        panel.innerHTML = `<div class="panel-head"><span class="title">Data</span><span class="points">read-only</span></div><div class="panel-body"><pre></pre></div>`;
+                        panel.querySelector("pre").textContent = fixedCode;
+                        page.appendChild(panel);
+                    }
+                    page.appendChild(renderTask(tasksById[item.id]));
+                    container.appendChild(page);
+                    pages.push({ id: item.id, task: tasksById[item.id], el: page });
+                }
+            }
+
+            $("page-nav").innerHTML = pages.map((p, i) => `<button class="nav-btn" onclick="showPage(${i})">${p.id}</button>`).join("");
+            showPage(Math.min(session.page || 0, pages.length - 1), false);
+
+            if (window.renderMathInElement) {
+                try {
+                    renderMathInElement(container, {
+                        delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }],
+                        throwOnError: false,
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function isAnswered(t) {
+            const a = (session.answers || {})[t.id];
+            return t.kind === "code" ? (a !== undefined && a !== t.starter) : String(a || "").trim() !== "";
+        }
+
+        function updateNav() {
+            if (!pages.length) return;
+            const buttons = $("page-nav").children;
+            let answered = 0;
+            pages.forEach((p, i) => {
+                const done = isAnswered(p.task);
+                if (done) answered++;
+                buttons[i].className = "nav-btn" + (done ? " answered" : "") + (i === currentPage ? " current" : "");
+            });
+            $("page-label").textContent = `Task ${pages[currentPage].id} — ${currentPage + 1} / ${pages.length}`;
+            $("answered-label").textContent = `Answered: ${answered} / ${pages.length}`;
+            $("prev-btn").disabled = currentPage === 0;
+            $("prev-btn").style.visibility = currentPage === 0 ? "hidden" : "visible";
+            $("next-btn").textContent = currentPage === pages.length - 1 ? "Confirm answers and finish the exam" : "Next task →";
+        }
+
+        function showPage(i, scroll = true) {
+            if (!pages.length) return;
+            i = Math.max(0, Math.min(i, pages.length - 1));
+            pages.forEach((p, k) => p.el.classList.toggle("current", k === i));
+            currentPage = i;
+            if (session) { session.page = i; saveSessionSoon(); }
+            updateNav();
+            if (scroll) window.scrollTo(0, 0);
+        }
+
+        function nextOrFinish() {
+            if (currentPage === pages.length - 1) openFinishModal();
+            else showPage(currentPage + 1);
+        }
+
+        function renderTask(t) {
+            const panel = document.createElement("div");
+            panel.className = "panel";
+            panel.id = `card-${t.id}`;
+            const title = t.title.replace(/^(Task\s+[A-Z]*\d+\.|Step\s+\d\.)\s*/, "").replace(/\s*\(\d+\s*points?\)\s*$/, "");
+            panel.innerHTML = `
+                <div class="panel-head">
+                    <div><span class="task-id">${t.id}.</span><span class="title"></span></div>
+                    <span class="points">${t.pts} points</span>
+                </div>
+                <div class="panel-body">
+                    <div class="md">${t.html}</div>
+                    <div class="answer"></div>
+                </div>`;
+            panel.querySelector(".title").textContent = title;
+            const box = panel.querySelector(".answer");
+            const saved = session.answers[t.id];
+
+            if (t.kind === "code") {
+                const ta = document.createElement("textarea");
+                ta.id = `ans-${t.id}`;
+                ta.className = "code-input";
+                ta.spellcheck = false;
+                ta.value = saved !== undefined ? saved : t.starter;
+                ta.rows = Math.min(Math.max(t.starter.split("\n").length + 1, 6), 24);
+                ta.addEventListener("input", () => { session.answers[t.id] = ta.value; saveSessionSoon(); });
+                ta.addEventListener("keydown", handleCodeKey);
+                box.appendChild(ta);
+                const tip = document.createElement("div");
+                tip.className = "hint";
+                tip.style.marginTop = "4px";
+                tip.textContent = "Like Colab: Enter keeps the indentation (4 spaces after \":\"), Tab / Shift+Tab indent / unindent, Ctrl+/ comments a line. You may return or print your answer.";
+                box.appendChild(tip);
+
+                const actions = document.createElement("div");
+                actions.className = "code-actions";
+                actions.innerHTML = `
+                    <button class="btn btn-sm">Check code</button>
+                    <button class="btn btn-outline btn-sm">Restore starter code</button>`;
+                const [testBtn, resetBtn] = actions.querySelectorAll("button");
+                testBtn.onclick = () => testTask(t.id, testBtn);
+                resetBtn.onclick = () => {
+                    ta.value = t.starter;
+                    session.answers[t.id] = t.starter;
+                    saveSessionSoon();
+                };
+                box.appendChild(actions);
+
+                const res = document.createElement("div");
+                res.id = `result-${t.id}`;
+                res.className = "result";
+                box.appendChild(res);
+            } else if (t.kind === "number") {
+                const label = document.createElement("label");
+                label.className = "hint";
+                label.style.display = "block";
+                label.style.marginBottom = "5px";
+                label.htmlFor = `ans-${t.id}`;
+                label.textContent = "Answer (integer):";
+                const inp = document.createElement("input");
+                inp.type = "text";
+                inp.id = `ans-${t.id}`;
+                inp.className = "single-input";
+                inp.autocomplete = "off";
+                inp.inputMode = "numeric";
+                inp.value = saved || "";
+                inp.addEventListener("input", () => { session.answers[t.id] = inp.value; saveSessionSoon(); });
+                box.append(label, inp);
+            } else if (t.kind === "choice") {
+                const list = document.createElement("div");
+                list.className = "options-list";
+                for (const [key, text] of Object.entries(t.options)) {
+                    const label = document.createElement("label");
+                    label.className = "option-label" + (saved === key ? " selected" : "");
+                    label.innerHTML = `<input type="radio" name="ans-${t.id}" value="${key}"${saved === key ? " checked" : ""}><span class="option-key">${key})</span><span>${text}</span>`;
+                    label.querySelector("input").addEventListener("change", () => {
+                        list.querySelectorAll(".option-label").forEach(l => l.classList.remove("selected"));
+                        label.classList.add("selected");
+                        session.answers[t.id] = key;
+                        saveSessionSoon();
+                    });
+                    list.appendChild(label);
+                }
+                box.appendChild(list);
+            }
+            return panel;
+        }
+
+        // ====================================================================
+        // CODE EDITOR — behaves like Colab / Jupyter
+        //   Enter: keeps the indentation, +4 after ":" and an open bracket, −4 after return/pass/break
+        //   Tab / Shift+Tab: indent / unindent the line or selection (4 spaces)
+        //   Backspace: deletes 4 spaces at once in the indentation; deletes an empty bracket/quote pair together
+        //   Brackets and quotes are closed automatically; Ctrl+/ toggles a comment
+        // ====================================================================
+        const INDENT = "    ";
+
+        function codeEdit(ta, from, to, text, selStart, selEnd) {
+            // execCommand keeps the browser undo (Ctrl+Z) history; setRangeText is the fallback
+            ta.focus();
+            ta.setSelectionRange(from, to);
+            let ok = false;
+            try { ok = document.execCommand("insertText", false, text); } catch (err) {}
+            if (!ok || ta.value.slice(from, from + text.length) !== text) {
+                ta.setRangeText(text, from, to, "end");
+                ta.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            ta.setSelectionRange(selStart ?? from + text.length, selEnd ?? selStart ?? from + text.length);
+        }
+
+        function lineBounds(v, s, e) {
+            const a = v.lastIndexOf("\n", s - 1) + 1;
+            let b = v.indexOf("\n", e);
+            if (b === -1) b = v.length;
+            return [a, b];
+        }
+
+        function indentSelection(ta, outdent) {
+            const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+            const [a, b] = lineBounds(v, s, e > s && v[e - 1] === "\n" ? e - 1 : e);
+            const lines = v.slice(a, b).split("\n");
+            let firstDelta = 0, total = 0;
+            const out = lines.map((ln, i) => {
+                let d;
+                if (outdent) {
+                    const m = ln.match(/^( {1,4}|\t)/);
+                    d = m ? -m[0].length : 0;
+                    if (m) ln = ln.slice(m[0].length);
+                } else if (ln.trim()) {
+                    ln = INDENT + ln; d = INDENT.length;
+                } else d = 0;
+                if (i === 0) firstDelta = d;
+                total += d;
+                return ln;
+            });
+            codeEdit(ta, a, b, out.join("\n"), Math.max(a, s + firstDelta), Math.max(a, e + total));
+        }
+
+        function toggleComment(ta) {
+            const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+            const [a, b] = lineBounds(v, s, e > s && v[e - 1] === "\n" ? e - 1 : e);
+            const lines = v.slice(a, b).split("\n");
+            const all = lines.filter(l => l.trim()).every(l => /^\s*#/.test(l));
+            let total = 0, first = 0;
+            const out = lines.map((ln, i) => {
+                if (!ln.trim()) return ln;
+                const n = all ? ln.replace(/^(\s*)# ?/, "$1") : ln.replace(/^(\s*)/, "$1# ");
+                if (i === 0) first = n.length - ln.length;
+                total += n.length - ln.length;
+                return n;
+            });
+            codeEdit(ta, a, b, out.join("\n"), Math.max(a, s + first), Math.max(a, e + total));
+        }
+
+        const PAIRS = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'" };
+
+        function handleCodeKey(e) {
+            const ta = e.target;
+            if (e.isComposing || e.ctrlKey && e.key !== "/" || e.metaKey && e.key !== "/") return;
+            const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+
+            if (e.key === "Tab") {
+                e.preventDefault();
+                if (e.shiftKey) return indentSelection(ta, true);
+                if (s !== en && v.slice(s, en).includes("\n")) return indentSelection(ta, false);
+                const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+                const col = s - lineStart;
+                const pad = " ".repeat(4 - (col % 4));     // up to the next multiple of 4
+                return codeEdit(ta, s, en, pad);
+            }
+
+            if ((e.key === "/" ) && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                return toggleComment(ta);
+            }
+
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+                const before = v.slice(lineStart, s);
+                const after = v.slice(en, v.indexOf("\n", en) === -1 ? v.length : v.indexOf("\n", en));
+                let indent = before.match(/^[ \t]*/)[0].replace(/\t/g, INDENT);
+                const code = before.replace(/#.*$/, "").trimEnd();
+                const opener = /[:(\[{]$/.test(code);
+                const closerNext = /^[)\]}]/.test(after.trimStart()) && /[(\[{]$/.test(code);
+                if (opener) indent += INDENT;
+                else if (/^(return|pass|break|continue|raise)\b/.test(before.trim()) && indent.length >= 4) indent = indent.slice(0, -4);
+                if (closerNext) {
+                    const base = indent.slice(0, -4);
+                    return codeEdit(ta, s, en, "\n" + indent + "\n" + base, s + 1 + indent.length);
+                }
+                return codeEdit(ta, s, en, "\n" + indent);
+            }
+
+            if (e.key === "Backspace" && s === en && s > 0) {
+                const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+                const before = v.slice(lineStart, s);
+                if (before.length > 0 && /^ +$/.test(before)) {            // indentation area
+                    const del = before.length % 4 || 4;
+                    e.preventDefault();
+                    return codeEdit(ta, s - del, s, "");
+                }
+                const pair = v[s - 1] + v[s];
+                if (PAIRS[v[s - 1]] === v[s] && ["()", "[]", "{}", '""', "''"].includes(pair)) {
+                    e.preventDefault();
+                    return codeEdit(ta, s - 1, s + 1, "");
+                }
+                return;
+            }
+
+            if (e.key.length === 1 && !e.altKey) {
+                const ch = e.key, next = v[en] || "";
+                if (s === en && ")]}\"'".includes(ch) && next === ch) {     // type over the closing character
+                    e.preventDefault();
+                    ta.setSelectionRange(s + 1, s + 1);
+                    return;
+                }
+                if (PAIRS[ch]) {
+                    const prev = v[s - 1] || "";
+                    const isQuote = ch === '"' || ch === "'";
+                    if (s !== en) {                                        // wrap the selection
+                        e.preventDefault();
+                        return codeEdit(ta, s, en, ch + v.slice(s, en) + PAIRS[ch], s + 1, en + 1);
+                    }
+                    if (isQuote && (/\w/.test(prev) || next && /\w/.test(next))) return;   // don't, f'... etc.
+                    if (!isQuote && next && /[\w"'(\[{]/.test(next)) return;
+                    e.preventDefault();
+                    return codeEdit(ta, s, en, ch + PAIRS[ch], s + 1);
+                }
+                // typing ":" after else/elif/except/finally moves the line one indentation level back automatically
+                if (ch === ":" && s === en) {
+                    const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+                    const before = v.slice(lineStart, s);
+                    const m = before.match(/^( +)(else|elif\b.*|except\b.*|finally)$/);
+                    if (m && m[1].length >= 4) {
+                        const prevLines = v.slice(0, lineStart).split("\n").filter(l => l.trim());
+                        const prev = prevLines.length ? prevLines[prevLines.length - 1] : "";
+                        const prevIndent = prev.match(/^ */)[0].length;
+                        if (prevIndent < m[1].length && !prev.trimEnd().endsWith(":")) {
+                            e.preventDefault();
+                            const target = Math.max(0, m[1].length - 4);
+                            return codeEdit(ta, lineStart, s, " ".repeat(target) + before.trimStart() + ":");
+                        }
+                    }
+                }
+            }
+        }
+
+        // Paste: tab→4 spaces, CRLF→LF, and a multi-line block is re-indented to the cursor level
+        function smartPaste(ta, text, partial) {
+            text = text.replace(/\r\n?/g, "\n").replace(/\t/g, INDENT).replace(/[ ​﻿]/g, (c) => c === " " ? " " : "");
+            const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+            const lines = text.split("\n");
+            if (lines.length === 1) return codeEdit(ta, s, en, text);
+            const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+            const before = v.slice(lineStart, s);
+            if (!/^ *$/.test(before)) return codeEdit(ta, s, en, text);       // pasted in the middle of a line — as is
+            // remove the common indentation (if the copy started mid-line, the first line is ignored)
+            const body = partial ? lines.slice(1) : lines;
+            const ind = Math.min(...body.filter(l => l.trim()).map(l => l.match(/^ */)[0].length), 1e9);
+            const cut = ind === 1e9 ? 0 : ind;
+            const dedented = lines.map((l, i) => (partial && i === 0) ? l : l.slice(Math.min(cut, l.match(/^ */)[0].length)));
+            // target level: the cursor indentation; on an empty line it comes from the previous line (+4 if it ends with ":")
+            let base = before;
+            if (before.length === 0) {
+                const prev = v.slice(0, Math.max(0, lineStart - 1)).split("\n").filter(l => l.trim()).pop() || "";
+                base = prev.match(/^ */)[0] + (/:\s*$/.test(prev.replace(/#.*$/, "")) ? INDENT : "");
+                if (!lines[0].trim() ) base = before;
+            }
+            const out = dedented.map((l, i) => (i === 0 ? l : (l.trim() ? base + l : l))).join("\n");
+            const pad = before.length === 0 ? base : "";
+            return codeEdit(ta, s, en, pad + out);
+        }
+
+        function collectAnswers() {
+            const answers = {};
+            const saved = (session && session.answers) || {};
+            for (const t of activeVariant.tasks) {
+                if (t.kind === "choice") {
+                    const checked = document.querySelector(`input[name="ans-${t.id}"]:checked`);
+                    answers[t.id] = checked ? checked.value : (saved[t.id] || "");
+                } else {
+                    const el = $(`ans-${t.id}`);
+                    answers[t.id] = el ? el.value : (saved[t.id] ?? t.starter ?? "");
+                }
+            }
+            return answers;
+        }
+
+        // ====================================================================
+        // "CHECK CODE" — checks the student's code with the bank test (full or partial points)
+        // ====================================================================
+        async function testTask(taskId, btn) {
+            const res = $(`result-${taskId}`);
+            btn.disabled = true;
+            res.className = "result info";
+            res.textContent = py.state === "ready" ? "Checking…" : "The checking system is loading, please wait…";
+            try {
+                const ready = await waitForPython(60000);
+                if (!ready) throw new Error("The checking system did not load. Check the internet connection or contact the exam supervisor.");
+                const out = await runPython({ steps: activeVariant.steps, answers: collectAnswers(), upto: taskId, budget: 10 }, 60000);
+                const r = out.results[taskId];
+                if (!r) throw new Error("No check result was received.");
+                session.tested = session.tested || {};
+                session.tested[taskId] = r.ok;
+                saveSessionSoon();
+                // Partially correct (0 < points < max): yellow, the failed parts are listed
+                res.className = "result " + (r.ok ? "ok" : (r.partial ? "partial" : "bad"));
+                res.innerHTML = `<div class="head"></div>${r.ok ? "" : '<div class="detail"></div>'}`;
+                res.querySelector(".head").textContent = plainMsg(r.msg);
+                if (!r.ok) res.querySelector(".detail").textContent = (r.partial ? "" : "Reason: ") + r.detail;
+                const printed = (out.output || {})[taskId];
+                if (printed && printed.trim()) {
+                    const pre = document.createElement("pre");
+                    pre.textContent = printed;
+                    res.appendChild(pre);
+                }
+            } catch (e) {
+                res.className = "result bad";
+                res.textContent = e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ====================================================================
+        // TIME
+        // ====================================================================
+        function remainingSeconds() {
+            return Math.max(0, EXAM_DURATION_SEC - Math.floor((Date.now() - session.startedAt) / 1000));
+        }
+
+        function startTimer() {
+            const display = $("timer-display");
+            const tick = () => {
+                const left = remainingSeconds();
+                const m = Math.floor(left / 60), s = left % 60;
+                display.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+                if (left < 300) display.style.color = "var(--bad)";
+                if (left <= 0) {
+                    clearInterval(timerInterval);
+                    finishExam("TIME_UP");
+                }
+            };
+            clearInterval(timerInterval);
+            tick();
+            timerInterval = setInterval(tick, 1000);
+        }
+
+        // ====================================================================
+        // RULE VIOLATIONS (3 WARNINGS)
+        // Note: Alt+Tab is handled by the operating system and the browser cannot block it,
+        // but the window loses focus, so it is detected immediately and counted as a violation.
+        // ====================================================================
+        const fullscreenSupported = !!(document.documentElement.requestFullscreen && document.fullscreenEnabled !== false);
+        let fullscreenDenied = false; // if the browser refuses full screen we do not block the student, we log it
+
+        function enterFullscreen() {
+            $("fullscreen-gate").style.display = "none";
+            const el = document.documentElement;
+            if (el.requestFullscreen && !document.fullscreenElement) {
+                el.requestFullscreen().then(() => { fullscreenDenied = false; }).catch(err => {
+                    console.log("Fullscreen failed:", err);
+                    if (!fullscreenDenied && session && examActive) {
+                        session.log.push({ t: new Date().toISOString(), reason: "The browser did not allow full-screen mode", counted: false });
+                        saveSessionSoon();
+                    }
+                    fullscreenDenied = true;
+                });
+            }
+        }
+
+        function registerViolation(reasonText) {
+            if (!examActive || submitting) return;
+            const now = Date.now();
+            if (warningModalOpen || now - lastViolationAt < 1500) return; // one event = one violation
+            lastViolationAt = now;
+
+            session.violations += 1;
+            session.log.push({ t: new Date().toISOString(), reason: reasonText, counted: true });
+            saveSession();
+            liveSync();
+            playAlertSound();
+            updateViolationsDisplay();
+            $("fullscreen-gate").style.display = "none";
+            $("finish-overlay").style.display = "none";
+            warningModalOpen = true;
+
+            const remaining = MAX_VIOLATIONS - session.violations;
+            if (remaining <= 0) {
+                $("warning-title-text").textContent = "The exam was cancelled";
+                $("warning-desc-text").textContent = `${reasonText} This is the third rule violation. Your exam has been stopped and your result is recorded as 0 points.`;
+                $("warning-remaining-text").textContent = "Warnings: 3 / 3";
+                $("warning-btn").style.display = "none";
+                $("warning-overlay").style.display = "flex";
+                finishExam("DISQUALIFIED_3_WARNINGS");
+            } else {
+                $("warning-title-text").textContent = "A rule violation was recorded";
+                $("warning-desc-text").textContent = `${reasonText} After ${remaining} more violation(s) your exam will be cancelled automatically.`;
+                $("warning-remaining-text").textContent = `Warnings: ${session.violations} / ${MAX_VIOLATIONS}`;
+                $("warning-btn").style.display = "";
+                $("warning-overlay").style.display = "flex";
+            }
+        }
+
+        // Attempts that are logged but not counted as violations (developer tools, copying etc.)
+        function logBlockedAttempt(what) {
+            showToast(`${what}: not allowed during the exam.`);
+            if (session && examActive) {
+                session.log.push({ t: new Date().toISOString(), reason: what, counted: false });
+                saveSessionSoon();
+            }
+        }
+
+        function dismissWarning() {
+            $("warning-overlay").style.display = "none";
+            warningModalOpen = false;
+            lastViolationAt = Date.now();
+            enterFullscreen();
+        }
+
+        function updateViolationsDisplay() {
+            const v = session ? Math.min(session.violations, 3) : 0;
+            const el = $("violations-display");
+            el.className = "violations v" + v;
+            el.querySelector("b").textContent = `${v} / ${MAX_VIOLATIONS}`;
+        }
+
+        function playAlertSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.setValueAtTime(220, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
+        // 1. Switching tab / minimising the browser
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) registerViolation("You left the exam page (another tab or the browser was minimised).");
+        });
+        // 2. Switching to another window / program (Alt+Tab)
+        window.addEventListener("blur", () => {
+            registerViolation("You left the browser window (another program or Alt+Tab).");
+        });
+        // 3. Leaving full screen
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement) registerViolation("You left full-screen mode.");
+        });
+        // Cover the exam when not in full screen (not counted as a violation)
+        setInterval(() => {
+            if (examActive && !submitting && fullscreenSupported && !fullscreenDenied && !document.fullscreenElement && !warningModalOpen) {
+                $("fullscreen-gate").style.display = "flex";
+            }
+        }, 1500);
+
+        // 4. Right-click and drag-and-drop are blocked
+        for (const [evt, label] of [["contextmenu", "Right-click"], ["drop", "Drag-and-drop"], ["dragstart", "Drag-and-drop"]]) {
+            document.addEventListener(evt, (e) => {
+                e.preventDefault();
+                logBlockedAttempt(label);
+            }, true);
+        }
+
+        // 4a. Ctrl+C / Ctrl+X / Ctrl+V work only INSIDE the exam.
+        //     Copied text is kept in the page's own memory and does not go to the system clipboard
+        //     (it cannot be moved outside — e.g. to an AI tool). Pasting works only from this memory
+        //     (text from outside is rejected and logged).
+        let examClipboard = "";
+        let examClipboardPartial = false;   // the copy started in the middle of a line (no indentation on the first line)
+
+        function editableTarget() {
+            const el = document.activeElement;
+            return el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type === "text")) ? el : null;
+        }
+
+        function insertAtCursor(el, text) {
+            el.setRangeText(text, el.selectionStart, el.selectionEnd, "end");
+            el.dispatchEvent(new Event("input"));
+        }
+
+        function handleCopy(e, isCut) {
+            e.preventDefault();
+            try { e.clipboardData.setData("text/plain", ""); } catch (err) {}   // nothing goes to the system clipboard
+            const el = editableTarget();
+            if (!el) {
+                // A selection from the task text (text, code example, data) — only into the exam memory
+                const sel = window.getSelection();
+                const box = $("questions-container");
+                if (sel && !sel.isCollapsed && box.contains(sel.anchorNode) && box.contains(sel.focusNode)) {
+                    examClipboard = sel.toString();
+                    examClipboardPartial = false;
+                } else if (sel && !sel.isCollapsed) {
+                    logBlockedAttempt("Copying text from the page");
+                }
+                return;
+            }
+            if (el.selectionStart === el.selectionEnd) return;
+            examClipboard = el.value.slice(el.selectionStart, el.selectionEnd);
+            const _ls = el.value.lastIndexOf("\n", el.selectionStart - 1) + 1;
+            examClipboardPartial = /\S/.test(el.value.slice(_ls, el.selectionStart));
+            if (isCut) insertAtCursor(el, "");
+        }
+
+        document.addEventListener("copy", (e) => handleCopy(e, false), true);
+        document.addEventListener("cut", (e) => handleCopy(e, true), true);
+        document.addEventListener("paste", (e) => {
+            e.preventDefault();
+            const el = editableTarget();
+            const external = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
+            if (external && external !== examClipboard) logBlockedAttempt("Pasting text from outside");
+            if (el && examClipboard) {
+                if (el.classList.contains("code-input")) smartPaste(el, examClipboard, examClipboardPartial);
+                else insertAtCursor(el, examClipboard);
+            }
+        }, true);
+
+        // 5. Developer tools and clipboard shortcuts
+        window.addEventListener("keydown", (e) => {
+            const ctrl = e.ctrlKey || e.metaKey;
+            const code = e.code || "";
+            const devtools =
+                e.key === "F12" ||
+                (ctrl && e.shiftKey && ["KeyI", "KeyJ", "KeyC", "KeyK"].includes(code)) ||   // Ctrl+Shift+I/J/C/K
+                (e.metaKey && e.altKey && ["KeyI", "KeyJ", "KeyC"].includes(code)) ||       // macOS Cmd+Opt+I/J/C
+                (ctrl && ["KeyU", "KeyS", "KeyP"].includes(code));                         // view source, save, print
+            if (devtools) {
+                e.preventDefault();
+                e.stopPropagation();
+                logBlockedAttempt("Developer tools / viewing the page source");
+                return;
+            }
+        }, true);
+
+        // 6. Warning when trying to close / reload the page
+        window.addEventListener("beforeunload", (e) => {
+            if (examActive && !submitting) {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        });
+
+        // ====================================================================
+        // FINISHING, GRADING AND SUBMITTING
+        // ====================================================================
+        function openFinishModal() {
+            const answers = collectAnswers();
+            const empty = activeVariant.tasks.filter(t => t.kind !== "code" && !String(answers[t.id] || "").trim()).map(t => t.id);
+            $("finish-desc").textContent = (empty.length ? `Unanswered tasks: ${empty.join(", ")}. ` : "") +
+                "After confirming you will not be able to change your answers.";
+            warningModalOpen = true; // blur must not count as a violation while the modal is open
+            $("finish-overlay").style.display = "flex";
+        }
+
+        function closeFinishModal() {
+            $("finish-overlay").style.display = "none";
+            warningModalOpen = false;
+        }
+
+        function confirmFinishExam() {
+            $("finish-confirm-btn").disabled = true;
+            finishExam("COMPLETED");
+        }
+
+        // If the checking system is unavailable, theoretical (multiple-choice) tasks are graded in JavaScript (same SHA-256 hashes)
+        function gradeChoiceAnswersInJs(answers) {
+            const hashes = {};
+            for (const st of activeVariant.steps) {
+                if (st.k !== "test") continue;
+                const m = st.code.match(/_h\((\w+)\)\s*==\s*"([0-9a-f]{64})"/);
+                if (m) hashes[st.ids[0]] = m[2];
+            }
+            const results = {};
+            for (const t of activeVariant.tasks) {
+                if (t.kind === "code" || !hashes[t.id]) continue;
+                let v = String(answers[t.id] || "").trim();
+                if (/^[+-]?\d+$/.test(v)) v = String(parseInt(v, 10));
+                const ok = v !== "" && sha256Hex(v.toLowerCase()) === hashes[t.id];
+                results[t.id] = { ok, pts: ok ? t.pts : 0, max: t.pts };
+            }
+            return results;
+        }
+
+        async function finishExam(finalStatus) {
+            if (submitting) return;
+            submitting = true;
+            examActive = false;
+            clearInterval(timerInterval);
+            $("finish-overlay").style.display = "none";
+            $("fullscreen-gate").style.display = "none";
+
+            const answers = collectAnswers();
+            session.answers = answers;
+            session.status = "grading";
+            saveSession();
+
+            const scores = {};
+            let grading = "automatic (Python)";
+            let total = 0;
+
+            if (finalStatus === "DISQUALIFIED_3_WARNINGS") {
+                grading = "not graded (3 warnings)";
+                await new Promise(r => setTimeout(r, 2500)); // time to read the warning
+            } else {
+                showGradingScreen();
+                let results;
+                try {
+                    const ready = await waitForPython(45000);
+                    if (!ready) throw new Error("The checking system is not ready");
+                    const out = await runPython({ steps: activeVariant.steps, answers, budget: 10 }, 240000);
+                    results = out.results;
+                } catch (e) {
+                    console.error("Grading error:", e);
+                    results = gradeChoiceAnswersInJs(answers);
+                    grading = "partial: coding tasks were not checked (check them with regrade.py)";
+                }
+                for (const t of activeVariant.tasks) {
+                    scores[t.id] = results[t.id] ? results[t.id].pts : 0;
+                    total += scores[t.id];
+                }
+            }
+
+            if (!session.recordId) session.recordId = newRecordId();
+            const record = {
+                id: session.recordId,
+                student_name: session.name,
+                student_group: session.group || GROUP_NAME,
+                student_id: String(session.sira),
+                variant: activeVariant.name,
+                score: finalStatus === "DISQUALIFIED_3_WARNINGS" ? 0 : total,
+                max_score: activeVariant.max_score,
+                violations: session.violations,
+                status: finalStatus,
+                answers,
+                breakdown: {
+                    scores,
+                    grading,
+                    started_at: new Date(session.startedAt).toISOString(),
+                    finished_at: new Date().toISOString(),
+                    violation_log: session.log,
+                },
+            };
+
+            session.status = "finished";
+            session.record = record;
+            session.uploaded = false;
+            saveSession();
+
+            try {
+                const hist = JSON.parse(localStorage.getItem("exam_local_submissions") || "[]");
+                hist.push({ ...record, created_at: new Date().toISOString() });
+                localStorage.setItem("exam_local_submissions", JSON.stringify(hist));
+            } catch (e) {}
+
+            if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            showCompleteScreen();
+            uploadRecord();
+            clearInterval(liveInterval);
+            liveSync();
+        }
+
+        function showScreen(id) {
+            for (const s of ["login-screen", "resume-screen", "exam-screen", "complete-screen"]) $(s).style.display = s === id ? "block" : "none";
+            $("statusbar").style.display = id === "exam-screen" ? "block" : "none";
+        }
+
+        function showGradingScreen() {
+            showScreen("complete-screen");
+            $("complete-title").textContent = "Checking your answers";
+            $("complete-desc").textContent = "Please wait and do not close the page.";
+            $("complete-table").style.display = "none";
+            $("upload-status").style.display = "none";
+        }
+
+        function showCompleteScreen() {
+            const r = session.record;
+            showScreen("complete-screen");
+            $("warning-overlay").style.display = "none";
+            $("teacher-reset").style.display = "";
+            $("complete-table").style.display = "";
+            $("upload-status").style.display = "";
+
+            $("res-name").textContent = r.student_name;
+            $("res-no").textContent = r.student_id;
+            $("res-variant").textContent = r.variant;
+            $("display-final-score").textContent = `${r.score} / ${r.max_score}`;
+
+            if (r.status === "DISQUALIFIED_3_WARNINGS") {
+                $("complete-title").textContent = "The exam was cancelled";
+                $("complete-title").style.color = "var(--bad)";
+                $("complete-desc").textContent = "Three rule violations were recorded, so your exam was stopped and your result is recorded as 0 points.";
+                $("display-violations-final").textContent = "3 (disqualified from the exam)";
+            } else {
+                $("complete-title").textContent = r.status === "TIME_UP" ? "Exam time is over" : "The exam is finished";
+                $("complete-desc").textContent = r.status === "TIME_UP"
+                    ? "The time is over, so your answers were submitted and graded automatically."
+                    : "Your answers have been submitted and graded.";
+                $("display-violations-final").textContent = String(r.violations);
+            }
+            renderUploadStatus();
+        }
+
+        function renderUploadStatus() {
+            const el = $("upload-status");
+            if (!supabaseClient) {
+                el.className = "result info";
+                el.textContent = "The result was saved only on this computer. Tell the exam supervisor.";
+            } else if (session.uploaded) {
+                el.className = "result ok";
+                el.textContent = "Your result has been sent to the exam supervisor.";
+            } else {
+                el.className = "result bad";
+                el.textContent = "The result has not been sent yet. The system is checking the connection and will retry automatically — do not close the page.";
+            }
+        }
+
+        // Secret id of the result: if the teacher cancels it, this computer can find out
+        function newRecordId() {
+            if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+            const b = crypto.getRandomValues(new Uint8Array(16));
+            b[6] = (b[6] & 0x0f) | 0x40;
+            b[8] = (b[8] & 0x3f) | 0x80;
+            const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+            return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+        }
+
+        // When the teacher presses "Restart" in the panel, the student's screen returns to the login screen automatically
+        let resetWatchTimer = null;
+        function watchForReset() {
+            clearInterval(resetWatchTimer);
+            const check = async () => {
+                if (!supabaseClient || !session || !session.uploaded || !session.record) return;
+                try {
+                    let wasReset = false;
+                    if (session.record.id) {
+                        const { data, error } = await supabaseClient.rpc("submission_was_reset", { p_id: session.record.id });
+                        wasReset = !error && data === true;
+                    } else {
+                        // A result sent by an old version (no id): if the number is free again, the teacher cancelled it
+                        const { data, error } = await supabaseClient.rpc("seat_is_taken", {
+                            p_group: session.record.student_group || GROUP_NAME, p_sira: String(session.record.student_id) });
+                        wasReset = !error && data === false;
+                    }
+                    if (wasReset) {
+                        clearInterval(resetWatchTimer);
+                        localStorage.removeItem(SESSION_KEY);
+                        try { sessionStorage.setItem("sdf1_reset_notice", "1"); } catch (e) {}
+                        location.reload();
+                    }
+                } catch (e) {}
+            };
+            resetCheck = check;
+            check();
+            resetWatchTimer = setInterval(check, 10000);
+        }
+
+        let uploadRetryTimer = null;
+        async function uploadRecord() {
+            if (!supabaseClient || !session || !session.record || session.uploaded) {
+                renderUploadStatus();
+                if (session && session.uploaded) watchForReset();
+                return;
+            }
+            try {
+                const { error } = await supabaseClient.from("exam_submissions").insert([session.record]);
+                if (error && error.code !== "23505") throw error; // 23505: already sent (retry)
+                session.uploaded = true;
+                saveSession();
+                watchForReset();
+            } catch (err) {
+                console.error("Supabase insert error:", err);
+                clearTimeout(uploadRetryTimer);
+                uploadRetryTimer = setTimeout(uploadRecord, 10000);
+            }
+            renderUploadStatus();
+        }
+
+        // The exam supervisor can reset the session on the same computer for the next student
+        function teacherReset() {
+            const pass = prompt("Teacher password:");
+            if (!pass) return;
+            if (sha256Hex(pass.trim()) !== ADMIN_HASH) {
+                alert("Wrong password.");
+                return;
+            }
+            if (session && session.record && !session.uploaded && supabaseClient &&
+                !confirm("This result has not been sent to the database yet. Reset anyway?")) return;
+            localStorage.removeItem(SESSION_KEY);
+            location.reload();
+        }
+
+        // ====================================================================
+        // INITIAL LOAD
+        // ====================================================================
+        (function init() {
+            if (!window.EXAM_DATA) {
+                $("login-screen").innerHTML = '<div class="panel"><div class="panel-body">The exam_data.js file was not found. Make sure all files are in the same folder.</div></div>';
+                return;
+            }
+            startPython();
+            setupRealtime();
+
+            try {
+                if (sessionStorage.getItem("sdf1_released_notice")) {
+                    sessionStorage.removeItem("sdf1_released_notice");
+                    const n = $("login-notice");
+                    n.textContent = "The exam supervisor stopped the exam on this computer and released the number.";
+                    n.style.display = "block";
+                }
+                if (sessionStorage.getItem("sdf1_reset_notice")) {
+                    sessionStorage.removeItem("sdf1_reset_notice");
+                    const n = $("login-notice");
+                    n.textContent = "The exam supervisor restarted your exam. Enter your details and start the exam again.";
+                    n.style.display = "block";
+                }
+            } catch (e) {}
+
+            session = loadSession();
+            if (!session) return;
+
+            if (session.status === "active" || session.status === "grading") {
+                activeVariant = window.EXAM_DATA.variants[session.variant];
+                if (session.violations >= MAX_VIOLATIONS) {
+                    examActive = true;
+                    finishExam("DISQUALIFIED_3_WARNINGS");
+                    return;
+                }
+                const left = remainingSeconds();
+                if (left <= 0) {
+                    renderQuestions();
+                    examActive = true;
+                    finishExam("TIME_UP");
+                    return;
+                }
+                showScreen("resume-screen");
+                $("resume-desc").innerHTML = `${escapeHtml(session.name)}, list № ${session.sira}. Time left: ${Math.floor(left / 60)} minutes.<br>` +
+                    `<b style="color: var(--bad);">Reloading the page is recorded as a rule violation.</b> Current number of warnings: ${session.violations} / ${MAX_VIOLATIONS}.`;
+            } else if (session.status === "finished" && session.record) {
+                activeVariant = window.EXAM_DATA.variants[session.variant];
+                showCompleteScreen();
+                uploadRecord();
+            }
+        })();
+    </script>
+</body>
+</html>

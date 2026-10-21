@@ -1,0 +1,8 @@
+# Vercel should publish only the website files (README, .py, .sql etc. must not be public)
+/*
+!index.html
+!admin.html
+!exam_data.js
+!sha256.js
+!generate-env.js
+!vercel.json

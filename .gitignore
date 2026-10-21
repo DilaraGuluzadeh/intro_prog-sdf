@@ -1,0 +1,10 @@
+.claude/
+__pycache__/
+*.pyc
+
+# Secret environment files (must never be committed)
+.env
+.env.*
+!.env.example
+env.js
+!env.example.js
